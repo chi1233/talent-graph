@@ -10,12 +10,19 @@ venv/
 
 # Node
 node_modules/
+frontend/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 /build
 /dist
+frontend/dist/
+.vite/
+
+# Env overrides (keep .env.example)
+frontend/.env
+!frontend/.env.example
 
 # VS Code
 .vscode/
