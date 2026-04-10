@@ -144,6 +144,14 @@ export default function GraphCanvas({ nodes, edges, selectedNode, onSelect, them
   return (
     <div className="canvas-wrap">
       <svg ref={svgRef} />
+      <div className="canvas-legend">
+        {Object.entries(LABEL_COLOR).map(([label, color]) => (
+          <div key={label} className="canvas-legend-item">
+            <span className="canvas-legend-dot" style={{ background: color }} />
+            <span className="canvas-legend-label">{label === 'GeographicCluster' ? 'Geographic Cluster' : label}</span>
+          </div>
+        ))}
+      </div>
       <div className="canvas-hint">Scroll to zoom · Drag to pan · Click a node</div>
     </div>
   )
