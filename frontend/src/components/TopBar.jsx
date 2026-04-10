@@ -23,7 +23,7 @@ export default function TopBar({ query, onQuery, theme, onToggleTheme, connectio
         <span className={`status-dot status-dot--${connectionStatus === 'live' ? 'live' : 'mock'}`} />
         {connectionStatus === 'connecting' ? 'Connecting…'
           : connectionStatus === 'live'    ? 'Neo4j Live'
-          : 'Mock Data'}
+          : 'Data (As of April 2026)'}
       </div>
 
       <button
