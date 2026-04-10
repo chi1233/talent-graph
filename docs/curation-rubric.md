@@ -111,6 +111,8 @@ Measures the completeness and verifiability of the data we have for this node. T
 | 1–2   | Only a name; no verifiable secondary sources |
 | 0     | Conflicting or potentially incorrect data (flag for deduplication) |
 
+**Reviewer notes:** This score reflects the *reviewer's confidence in the data*, not the person's quality. A world-class researcher with only a name and employer on file should score low here. Do not conflate low data confidence with low talent signal — note any data gaps in `review_notes` and flag the node for enrichment rather than deprioritizing it outright. If LinkedIn is behind a paywall or returns a 404, attempt Google Scholar, a company bio page, or a press mention before defaulting to a low score.
+
 ---
 
 ## Reviewer Workflow

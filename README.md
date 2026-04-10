@@ -20,7 +20,7 @@ talent-graph/
 ├── docs/                 # Human-readable documentation
 │   └── curation-rubric.md         # Scoring criteria for the first 1,000 nodes
 │
-├── frontend/             # (placeholder) UI layer — not yet implemented
+├── frontend/             # React + Vite SPA — search and graph exploration UI
 │
 ├── graph/                # Neo4j schema and seed data
 │   ├── schema.cypher     # Constraints, indexes, and node/edge type documentation
@@ -155,11 +155,39 @@ curl "http://localhost:8000/signals/founders?min_founder_likelihood=7.0"
 
 ---
 
+## Deploying the Frontend to Vercel
+
+The React frontend is a static SPA and can be deployed independently of the API.
+
+### One-click deploy
+
+1. Push the repo to GitHub.
+2. In [vercel.com](https://vercel.com), click **Add New Project** and import the repo.
+3. Set the **Root Directory** to `frontend`.
+4. Vercel will auto-detect Vite. Leave the build command (`vite build`) and output directory (`dist`) at their defaults.
+5. Add environment variables if your frontend calls the API:
+   - `VITE_API_URL` — full URL of your FastAPI backend (e.g. `https://your-api.onrender.com`)
+6. Click **Deploy**.
+
+The `frontend/vercel.json` rewrite rule ensures client-side routes don't return 404 on hard refresh.
+
+### CLI deploy
+
+```bash
+cd frontend
+npm install
+npx vercel --prod
+```
+
+> **Note:** The FastAPI backend and Neo4j database must be hosted separately (e.g. Render + Neo4j Aura). Vercel only serves the static frontend.
+
+---
+
 ## Roadmap
 
 - [ ] `scripts/import_csv.py` — bulk CSV → Neo4j upsert
 - [ ] `scripts/enrich.py` — LinkedIn / GitHub API enrichment
 - [ ] `models/` — ML model to predict `founder_likelihood` from graph features
-- [ ] `frontend/` — Search and exploration UI
+- [x] `frontend/` — Search and exploration UI
 - [ ] Authentication layer on the API
 - [ ] Webhook / notification when a Tier 1 node changes jobs
