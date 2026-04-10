@@ -1,6 +1,6 @@
 # Talent Graph
 
-A platform for mapping talent networks and surfacing high-potential individuals — researchers, engineers, and operators who are likely to found companies or join founding teams.
+A platform for mapping the top AI researchers in the world.
 
 The core data store is a Neo4j property graph. A FastAPI layer sits on top for read access. Manual curation drives the first 1,000 nodes using a structured scoring rubric.
 
