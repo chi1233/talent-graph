@@ -4,7 +4,7 @@ export default function TopBar({ query, onQuery, theme, onToggleTheme, connectio
   return (
     <header className="topbar">
       <div className="topbar__logo">
-        Talent<span>Graph</span>
+        Meridian<span></span>
       </div>
 
       <div className="topbar__search">
