@@ -1,9 +1,17 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import * as React from 'react'
 import { fetchGraph, searchPersons, isUsingMock, connectionReady, setActiveDataset } from './lib/neo4j.js'
+import { mockNodes } from './lib/mockData.js'
+import { mockSafetyNodes } from './lib/mockDataSafety.js'
+import { computeOverlap } from './lib/overlap.js'
 import TopBar from './components/TopBar.jsx'
 import Sidebar from './components/Sidebar.jsx'
 import GraphCanvas from './components/GraphCanvas.jsx'
 import DetailPanel from './components/DetailPanel.jsx'
+import ComparePanel from './components/ComparePanel.jsx'
+
+// Expose React for ComparePanel's useState (used in overlay component)
+window.React = React
 
 export default function App() {
   const [theme, setTheme]             = useState('dark')
@@ -16,10 +24,19 @@ export default function App() {
   // Dataset toggle: 'general' | 'safety'
   const [dataset, setDataset] = useState('general')
 
+  // Compare mode
+  const [compareMode, setCompareMode] = useState(false)
+
   // Filters
   const [minScore, setMinScore]  = useState(0)
   const [tierFilter, setTier]    = useState('')
   const [geoFilter, setGeo]      = useState('')
+
+  // Compute overlap pairs from both static datasets (always available)
+  const overlapPairs = useMemo(
+    () => computeOverlap(mockNodes, mockSafetyNodes),
+    []
+  )
 
   // Apply theme to document root
   useEffect(() => {
@@ -28,9 +45,9 @@ export default function App() {
 
   // Load graph once connection is resolved (or re-load on dataset switch)
   useEffect(() => {
-    setSelected(null)  // clear selection on switch
-    setQuery('')        // clear search on switch
-    setTier('')         // reset filters on switch
+    setSelected(null)
+    setQuery('')
+    setTier('')
     setGeo('')
 
     connectionReady.then(async () => {
@@ -62,6 +79,10 @@ export default function App() {
     if (ds !== dataset) setDataset(ds)
   }, [dataset])
 
+  const handleCompareToggle = useCallback(() => {
+    setCompareMode(m => !m)
+  }, [])
+
   return (
     <div className="app">
       <TopBar
@@ -72,6 +93,9 @@ export default function App() {
         connectionStatus={connectionStatus}
         dataset={dataset}
         onDatasetToggle={handleDatasetToggle}
+        compareMode={compareMode}
+        onCompareToggle={handleCompareToggle}
+        overlapCount={overlapPairs.length}
       />
       <Sidebar
         nodes={filteredNodes}
@@ -99,6 +123,14 @@ export default function App() {
         edges={graphData.edges}
         allNodes={graphData.nodes}
       />
+
+      {/* Compare overlay */}
+      {compareMode && (
+        <ComparePanel
+          overlapPairs={overlapPairs}
+          onClose={() => setCompareMode(false)}
+        />
+      )}
     </div>
   )
 }

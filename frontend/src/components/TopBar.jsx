@@ -1,6 +1,6 @@
-import { Search, Sun, Moon, ShieldCheck, Brain } from 'lucide-react'
+import { Search, Sun, Moon, ShieldCheck, Brain, GitCompare } from 'lucide-react'
 
-export default function TopBar({ query, onQuery, theme, onToggleTheme, connectionStatus, dataset, onDatasetToggle }) {
+export default function TopBar({ query, onQuery, theme, onToggleTheme, connectionStatus, dataset, onDatasetToggle, compareMode, onCompareToggle, overlapCount }) {
   const isSafety = dataset === 'safety'
 
   return (
@@ -40,6 +40,20 @@ export default function TopBar({ query, onQuery, theme, onToggleTheme, connectio
           <span className="dataset-toggle__count">40</span>
         </button>
       </div>
+
+      {/* Compare button */}
+      <button
+        className={`topbar__btn topbar__btn--compare${compareMode ? ' topbar__btn--compare-active' : ''}`}
+        onClick={onCompareToggle}
+        title="Compare researchers in both lists"
+        aria-pressed={compareMode}
+      >
+        <GitCompare size={14} />
+        <span style={{ fontSize: 12, marginLeft: 4 }}>Compare</span>
+        {overlapCount > 0 && (
+          <span className="compare-badge">{overlapCount}</span>
+        )}
+      </button>
 
       <div className="topbar__spacer" />
 
