@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { fetchGraph, searchPersons, isUsingMock, connectionReady } from './lib/neo4j.js'
+import { fetchGraph, searchPersons, isUsingMock, connectionReady, setActiveDataset } from './lib/neo4j.js'
 import TopBar from './components/TopBar.jsx'
 import Sidebar from './components/Sidebar.jsx'
 import GraphCanvas from './components/GraphCanvas.jsx'
@@ -13,6 +13,9 @@ export default function App() {
   const [filteredNodes, setFiltered]  = useState([])
   const [connectionStatus, setStatus] = useState('connecting')
 
+  // Dataset toggle: 'general' | 'safety'
+  const [dataset, setDataset] = useState('general')
+
   // Filters
   const [minScore, setMinScore]  = useState(0)
   const [tierFilter, setTier]    = useState('')
@@ -23,15 +26,21 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
 
-  // Load graph once connection is resolved
+  // Load graph once connection is resolved (or re-load on dataset switch)
   useEffect(() => {
+    setSelected(null)  // clear selection on switch
+    setQuery('')        // clear search on switch
+    setTier('')         // reset filters on switch
+    setGeo('')
+
     connectionReady.then(async () => {
       setStatus(isUsingMock() ? 'mock' : 'live')
+      setActiveDataset(dataset)
       const data = await fetchGraph()
       setGraphData(data)
       setFiltered(data.nodes.filter(n => n.label === 'Person'))
     })
-  }, [])
+  }, [dataset])
 
   // Re-filter whenever query or filter state changes
   useEffect(() => {
@@ -49,6 +58,10 @@ export default function App() {
     setTheme(t => t === 'dark' ? 'light' : 'dark')
   }, [])
 
+  const handleDatasetToggle = useCallback((ds) => {
+    if (ds !== dataset) setDataset(ds)
+  }, [dataset])
+
   return (
     <div className="app">
       <TopBar
@@ -57,6 +70,8 @@ export default function App() {
         theme={theme}
         onToggleTheme={toggleTheme}
         connectionStatus={connectionStatus}
+        dataset={dataset}
+        onDatasetToggle={handleDatasetToggle}
       />
       <Sidebar
         nodes={filteredNodes}
@@ -69,6 +84,7 @@ export default function App() {
         geoFilter={geoFilter}
         onGeoFilter={setGeo}
         allNodes={graphData.nodes}
+        dataset={dataset}
       />
       <GraphCanvas
         nodes={graphData.nodes}
@@ -76,6 +92,7 @@ export default function App() {
         selectedNode={selectedNode}
         onSelect={setSelected}
         theme={theme}
+        dataset={dataset}
       />
       <DetailPanel
         node={selectedNode}

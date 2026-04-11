@@ -1,6 +1,8 @@
-import { Search, Sun, Moon } from 'lucide-react'
+import { Search, Sun, Moon, ShieldCheck, Brain } from 'lucide-react'
 
-export default function TopBar({ query, onQuery, theme, onToggleTheme, connectionStatus }) {
+export default function TopBar({ query, onQuery, theme, onToggleTheme, connectionStatus, dataset, onDatasetToggle }) {
+  const isSafety = dataset === 'safety'
+
   return (
     <header className="topbar">
       <div className="topbar__logo">
@@ -15,6 +17,28 @@ export default function TopBar({ query, onQuery, theme, onToggleTheme, connectio
           value={query}
           onChange={e => onQuery(e.target.value)}
         />
+      </div>
+
+      {/* Dataset toggle */}
+      <div className="dataset-toggle" role="group" aria-label="Switch dataset">
+        <button
+          className={`dataset-toggle__btn${!isSafety ? ' dataset-toggle__btn--active' : ''}`}
+          onClick={() => onDatasetToggle('general')}
+          title="Top 49 AI Researchers"
+        >
+          <Brain size={13} />
+          <span>General AI</span>
+          <span className="dataset-toggle__count">49</span>
+        </button>
+        <button
+          className={`dataset-toggle__btn dataset-toggle__btn--safety${isSafety ? ' dataset-toggle__btn--active dataset-toggle__btn--active-safety' : ''}`}
+          onClick={() => onDatasetToggle('safety')}
+          title="Top 40 AI Safety Researchers"
+        >
+          <ShieldCheck size={13} />
+          <span>AI Safety</span>
+          <span className="dataset-toggle__count">40</span>
+        </button>
       </div>
 
       <div className="topbar__spacer" />

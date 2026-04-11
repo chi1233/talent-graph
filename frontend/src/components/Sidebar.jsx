@@ -12,6 +12,7 @@ export default function Sidebar({
   tierFilter, onTierFilter,
   geoFilter, onGeoFilter,
   allNodes,
+  dataset,
 }) {
   // Collect unique geo values for the filter dropdown
   const geoOptions = useMemo(() => {
@@ -23,7 +24,9 @@ export default function Sidebar({
   return (
     <aside className="sidebar">
       <div className="sidebar__header">
-        <div className="sidebar__title">Filters</div>
+        <div className="sidebar__title">
+          {dataset === 'safety' ? 'AI Safety · Filters' : 'General AI · Filters'}
+        </div>
 
         <div className="filter-row">
           <div style={{ flex: 1 }}>

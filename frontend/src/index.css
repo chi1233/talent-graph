@@ -145,6 +145,69 @@ html, body, #root {
 }
 .topbar__btn:hover { background: var(--border); color: var(--text); }
 
+/* ── Dataset Toggle ────────────────────────────────────────── */
+.dataset-toggle {
+  display: flex;
+  align-items: center;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2px;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.dataset-toggle__btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.dataset-toggle__btn:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.dataset-toggle__btn--active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.dataset-toggle__btn--active:hover {
+  background: var(--accent);
+  color: #fff;
+  opacity: 0.9;
+}
+
+.dataset-toggle__btn--safety.dataset-toggle__btn--active-safety {
+  background: #059669;
+  color: #fff;
+}
+
+.dataset-toggle__btn--safety.dataset-toggle__btn--active-safety:hover {
+  background: #047857;
+  color: #fff;
+  opacity: 1;
+}
+
+.dataset-toggle__count {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  opacity: 0.75;
+  line-height: 1;
+}
+
 /* ── Sidebar ───────────────────────────────────────────────── */
 .sidebar {
   grid-area: sidebar;

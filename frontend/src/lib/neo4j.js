@@ -1,5 +1,25 @@
 import neo4j from 'neo4j-driver'
 import { mockNodes, mockEdges } from './mockData.js'
+import { mockSafetyNodes, mockSafetyEdges } from './mockDataSafety.js'
+
+// Active dataset: 'general' | 'safety'
+let _activeDataset = 'general'
+
+export function setActiveDataset(dataset) {
+  _activeDataset = dataset
+}
+
+export function getActiveDataset() {
+  return _activeDataset
+}
+
+function getMockNodes() {
+  return _activeDataset === 'safety' ? mockSafetyNodes : mockNodes
+}
+
+function getMockEdges() {
+  return _activeDataset === 'safety' ? mockSafetyEdges : mockEdges
+}
 
 const URI  = import.meta.env.VITE_NEO4J_URI
 const USER = import.meta.env.VITE_NEO4J_USER
@@ -45,7 +65,7 @@ async function runQuery(cypher, params = {}) {
 
 export async function fetchGraph() {
   await connectionReady
-  if (_usingMock) return { nodes: mockNodes, edges: mockEdges }
+  if (_usingMock) return { nodes: getMockNodes(), edges: getMockEdges() }
 
   const records = await runQuery(`
     MATCH (n)
@@ -86,7 +106,7 @@ export async function fetchGraph() {
 
 export async function fetchPerson(id) {
   await connectionReady
-  if (_usingMock) return mockNodes.find(n => n.id === id) || null
+  if (_usingMock) return getMockNodes().find(n => n.id === id) || null
 
   const records = await runQuery(
     'MATCH (p:Person {id: $id}) RETURN p',
@@ -102,7 +122,7 @@ export async function searchPersons({ q = '', minScore = 0, tier, geo } = {}) {
   await connectionReady
 
   if (_usingMock) {
-    return mockNodes
+    return getMockNodes()
       .filter(n => n.label === 'Person')
       .filter(n => !q || n.name.toLowerCase().includes(q.toLowerCase()) ||
                        (n.role || '').toLowerCase().includes(q.toLowerCase()) ||
@@ -139,7 +159,7 @@ export async function fetchFounderSignals({ minFounderLikelihood = 7.0 } = {}) {
   await connectionReady
 
   if (_usingMock) {
-    return mockNodes
+    return getMockNodes()
       .filter(n => n.label === 'Person' && (n.founder_likelihood || 0) >= minFounderLikelihood)
       .sort((a, b) => b.founder_likelihood - a.founder_likelihood)
   }
