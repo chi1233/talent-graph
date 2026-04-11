@@ -4,7 +4,7 @@
  * Source: AI_Safety_Researchers_Rankings.pdf / research compiled April 2026.
  */
 
-export const mockSafetyNodes = [
+const mockSafetyPersonNodes = [
   // ── PERSON NODES ──────────────────────────────────────────────────────────
 
   {
@@ -889,5 +889,207 @@ export const mockSafetyNodes = [
   },
 ]
 
-// No graph edges for the safety dataset (future: add institution/geography nodes)
-export const mockSafetyEdges = []
+
+
+// ── INSTITUTION NODES ─────────────────────────────────────────────────────
+
+export const mockSafetyInstitutions = [
+  { id: 'si-001', label: 'Institution', name: 'UC Berkeley',              type: 'university', country: 'USA',         world_rank: 4  },
+  { id: 'si-002', label: 'Institution', name: 'Anthropic',                type: 'company',    country: 'USA',         world_rank: null },
+  { id: 'si-003', label: 'Institution', name: 'OpenAI',                   type: 'company',    country: 'USA',         world_rank: null },
+  { id: 'si-004', label: 'Institution', name: 'Google DeepMind',          type: 'company',    country: 'UK',          world_rank: null },
+  { id: 'si-005', label: 'Institution', name: 'MIT',                      type: 'university', country: 'USA',         world_rank: 1  },
+  { id: 'si-006', label: 'Institution', name: 'Stanford University',      type: 'university', country: 'USA',         world_rank: 3  },
+  { id: 'si-007', label: 'Institution', name: 'University of Oxford',     type: 'university', country: 'UK',          world_rank: 5  },
+  { id: 'si-008', label: 'Institution', name: 'Mila / U de Montréal',     type: 'university', country: 'Canada',      world_rank: null },
+  { id: 'si-009', label: 'Institution', name: 'MIRI',                     type: 'nonprofit',  country: 'USA',         world_rank: null },
+  { id: 'si-010', label: 'Institution', name: 'Harvard University',       type: 'university', country: 'USA',         world_rank: 2  },
+  { id: 'si-011', label: 'Institution', name: 'Princeton University',     type: 'university', country: 'USA',         world_rank: 6  },
+  { id: 'si-012', label: 'Institution', name: 'Carnegie Mellon University',type:'university', country: 'USA',         world_rank: 8  },
+  { id: 'si-013', label: 'Institution', name: 'UK AI Security Institute', type: 'government', country: 'UK',          world_rank: null },
+  { id: 'si-014', label: 'Institution', name: 'CAIS',                     type: 'nonprofit',  country: 'USA',         world_rank: null },
+  { id: 'si-015', label: 'Institution', name: 'SSI',                      type: 'company',    country: 'USA',         world_rank: null },
+  { id: 'si-016', label: 'Institution', name: 'DAIR Institute',           type: 'nonprofit',  country: 'USA',         world_rank: null },
+  { id: 'si-017', label: 'Institution', name: 'Redwood Research',         type: 'nonprofit',  country: 'USA',         world_rank: null },
+  { id: 'si-018', label: 'Institution', name: 'FAR.AI',                   type: 'nonprofit',  country: 'USA',         world_rank: null },
+  { id: 'si-019', label: 'Institution', name: 'ARC',                      type: 'nonprofit',  country: 'USA',         world_rank: null },
+  { id: 'si-020', label: 'Institution', name: 'McGill / Meta FAIR',       type: 'university', country: 'Canada',      world_rank: null },
+]
+
+// ── GEOGRAPHIC CLUSTER NODES ──────────────────────────────────────────────
+
+export const mockSafetyGeo = [
+  { id: 'sg-001', label: 'GeographicCluster', name: 'San Francisco',  country: 'USA'    },
+  { id: 'sg-002', label: 'GeographicCluster', name: 'Berkeley',       country: 'USA'    },
+  { id: 'sg-003', label: 'GeographicCluster', name: 'London',         country: 'UK'     },
+  { id: 'sg-004', label: 'GeographicCluster', name: 'Montreal',       country: 'Canada' },
+  { id: 'sg-005', label: 'GeographicCluster', name: 'Cambridge',      country: 'USA'    },
+  { id: 'sg-006', label: 'GeographicCluster', name: 'Stanford',       country: 'USA'    },
+  { id: 'sg-007', label: 'GeographicCluster', name: 'Oxford',         country: 'UK'     },
+  { id: 'sg-008', label: 'GeographicCluster', name: 'Toronto',        country: 'Canada' },
+  { id: 'sg-009', label: 'GeographicCluster', name: 'Pittsburgh',     country: 'USA'    },
+  { id: 'sg-010', label: 'GeographicCluster', name: 'New York',       country: 'USA'    },
+  { id: 'sg-011', label: 'GeographicCluster', name: 'Princeton',      country: 'USA'    },
+  { id: 'sg-012', label: 'GeographicCluster', name: 'Austin',         country: 'USA'    },
+  { id: 'sg-013', label: 'GeographicCluster', name: 'Mountain View',  country: 'USA'    },
+  { id: 'sg-014', label: 'GeographicCluster', name: 'Palo Alto',      country: 'USA'    },
+  { id: 'sg-015', label: 'GeographicCluster', name: 'Corvallis',      country: 'USA'    },
+  { id: 'sg-016', label: 'GeographicCluster', name: 'Oakland',        country: 'USA'    },
+  { id: 'sg-017', label: 'GeographicCluster', name: 'Los Angeles',    country: 'USA'    },
+]
+
+// ── EDGES ─────────────────────────────────────────────────────────────────
+// EMPLOYED_AT
+const safetyEmployedEdges = [
+  { id: 'se-001', source: 'safety-001', target: 'si-001', type: 'EMPLOYED_AT',  label: 'CHAI Director' },
+  { id: 'se-002', source: 'safety-002', target: 'si-008', type: 'EMPLOYED_AT',  label: 'Scientific Director' },
+  { id: 'se-003', source: 'safety-003', target: 'si-015', type: 'EMPLOYED_AT',  label: 'Co-Founder & Chief Scientist' },
+  { id: 'se-004', source: 'safety-004', target: 'si-002', type: 'EMPLOYED_AT',  label: 'CEO' },
+  { id: 'se-005', source: 'safety-005', target: 'si-002', type: 'EMPLOYED_AT',  label: 'Co-Founder' },
+  { id: 'se-006', source: 'safety-006', target: 'si-019', type: 'EMPLOYED_AT',  label: 'Founder' },
+  { id: 'se-007', source: 'safety-007', target: 'si-002', type: 'EMPLOYED_AT',  label: 'VP of Alignment' },
+  { id: 'se-008', source: 'safety-008', target: 'si-002', type: 'EMPLOYED_AT',  label: 'Interpretability Lead' },
+  { id: 'se-009', source: 'safety-009', target: 'si-013', type: 'EMPLOYED_AT',  label: 'Technical Director' },
+  { id: 'se-010', source: 'safety-010', target: 'si-014', type: 'EMPLOYED_AT',  label: 'Director' },
+  { id: 'se-011', source: 'safety-011', target: 'si-001', type: 'EMPLOYED_AT',  label: 'Assistant Professor' },
+  { id: 'se-012', source: 'safety-012', target: 'si-004', type: 'EMPLOYED_AT',  label: 'Research Director' },
+  { id: 'se-013', source: 'safety-013', target: 'si-002', type: 'EMPLOYED_AT',  label: 'Alignment Researcher' },
+  { id: 'se-014', source: 'safety-014', target: 'si-002', type: 'EMPLOYED_AT',  label: 'Member of Technical Staff' },
+  { id: 'se-015', source: 'safety-015', target: 'si-006', type: 'EMPLOYED_AT',  label: 'CRFM Director' },
+  { id: 'se-016', source: 'safety-016', target: 'si-004', type: 'EMPLOYED_AT',  label: 'Chief AGI Scientist' },
+  { id: 'se-017', source: 'safety-017', target: 'si-007', type: 'EMPLOYED_AT',  label: 'Professor' },
+  { id: 'se-018', source: 'safety-018', target: 'si-004', type: 'EMPLOYED_AT',  label: 'Research Scientist' },
+  { id: 'se-019', source: 'safety-019', target: 'si-020', type: 'EMPLOYED_AT',  label: 'VP AI Research' },
+  { id: 'se-020', source: 'safety-020', target: 'si-010', type: 'EMPLOYED_AT',  label: 'Professor' },
+  { id: 'se-021', source: 'safety-021', target: 'si-005', type: 'EMPLOYED_AT',  label: 'Assistant Professor' },
+  { id: 'se-022', source: 'safety-022', target: 'si-012', type: 'EMPLOYED_AT',  label: 'Associate Professor' },
+  { id: 'se-023', source: 'safety-023', target: 'si-011', type: 'EMPLOYED_AT',  label: 'Professor' },
+  { id: 'se-024', source: 'safety-024', target: 'si-004', type: 'EMPLOYED_AT',  label: 'Research Scientist' },
+  { id: 'se-025', source: 'safety-025', target: 'si-008', type: 'EMPLOYED_AT',  label: 'Assistant Professor' },
+  { id: 'se-026', source: 'safety-026', target: 'si-005', type: 'EMPLOYED_AT',  label: 'sabbatical → OpenAI' },
+  { id: 'se-027', source: 'safety-027', target: 'si-002', type: 'EMPLOYED_AT',  label: 'Affiliate Researcher' },
+  { id: 'se-028', source: 'safety-028', target: 'si-016', type: 'EMPLOYED_AT',  label: 'Founder & Exec Director' },
+  { id: 'se-029', source: 'safety-029', target: 'si-005', type: 'EMPLOYED_AT',  label: 'Senior Researcher' },
+  { id: 'se-030', source: 'safety-030', target: 'si-009', type: 'EMPLOYED_AT',  label: 'Decision Theory Researcher' },
+  { id: 'se-031', source: 'safety-031', target: 'si-009', type: 'EMPLOYED_AT',  label: 'Executive Director' },
+  { id: 'se-033', source: 'safety-033', target: 'si-001', type: 'EMPLOYED_AT',  label: 'Assistant Professor' },
+  { id: 'se-035', source: 'safety-035', target: 'si-002', type: 'EMPLOYED_AT',  label: 'Co-Founder' },
+  { id: 'se-036', source: 'safety-036', target: 'si-018', type: 'EMPLOYED_AT',  label: 'Founder & CEO' },
+  { id: 'se-037', source: 'safety-037', target: 'si-017', type: 'EMPLOYED_AT',  label: 'CEO' },
+  { id: 'se-038', source: 'safety-038', target: 'si-003', type: 'EMPLOYED_AT',  label: 'Researcher' },
+  { id: 'se-039', source: 'safety-039', target: 'si-001', type: 'EMPLOYED_AT',  label: 'Researcher' },
+]
+
+// ALUMNI_OF (PhD institution)
+const safetyAlumniEdges = [
+  { id: 'sa-001', source: 'safety-001', target: 'si-007', type: 'ALUMNI_OF', label: 'PhD — Oxford' },
+  { id: 'sa-002', source: 'safety-002', target: 'si-010', type: 'ALUMNI_OF', label: 'PhD — McGill' },
+  { id: 'sa-003', source: 'safety-003', target: 'si-001', type: 'ALUMNI_OF', label: 'PhD — U Toronto (via Hinton)' },
+  { id: 'sa-004', source: 'safety-004', target: 'si-011', type: 'ALUMNI_OF', label: 'PhD — Princeton' },
+  { id: 'sa-005', source: 'safety-005', target: 'si-001', type: 'ALUMNI_OF', label: 'PhD — UC Berkeley' },
+  { id: 'sa-006', source: 'safety-006', target: 'si-001', type: 'ALUMNI_OF', label: 'PhD — UC Berkeley' },
+  { id: 'sa-009', source: 'safety-009', target: 'si-006', type: 'ALUMNI_OF', label: 'PhD — Stanford' },
+  { id: 'sa-010', source: 'safety-010', target: 'si-001', type: 'ALUMNI_OF', label: 'PhD — UC Berkeley' },
+  { id: 'sa-011', source: 'safety-011', target: 'si-006', type: 'ALUMNI_OF', label: 'PhD — Stanford' },
+  { id: 'sa-012', source: 'safety-012', target: 'si-012', type: 'ALUMNI_OF', label: 'PhD — CMU' },
+  { id: 'sa-014', source: 'safety-014', target: 'si-010', type: 'ALUMNI_OF', label: 'PhD — NYU' },
+  { id: 'sa-015', source: 'safety-015', target: 'si-005', type: 'ALUMNI_OF', label: 'PhD — MIT' },
+  { id: 'sa-018', source: 'safety-018', target: 'si-010', type: 'ALUMNI_OF', label: 'PhD — Harvard' },
+  { id: 'sa-019', source: 'safety-019', target: 'si-012', type: 'ALUMNI_OF', label: 'PhD — CMU' },
+  { id: 'sa-020', source: 'safety-020', target: 'si-005', type: 'ALUMNI_OF', label: 'PhD — MIT' },
+  { id: 'sa-021', source: 'safety-021', target: 'si-001', type: 'ALUMNI_OF', label: 'PhD — UC Berkeley' },
+  { id: 'sa-023', source: 'safety-023', target: 'si-001', type: 'ALUMNI_OF', label: 'PhD — UT Austin' },
+  { id: 'sa-024', source: 'safety-024', target: 'si-005', type: 'ALUMNI_OF', label: 'PhD — MIT' },
+  { id: 'sa-026', source: 'safety-026', target: 'si-001', type: 'ALUMNI_OF', label: 'PhD — UC Berkeley' },
+  { id: 'sa-027', source: 'safety-027', target: 'si-005', type: 'ALUMNI_OF', label: 'PhD — MIT' },
+  { id: 'sa-028', source: 'safety-028', target: 'si-006', type: 'ALUMNI_OF', label: 'PhD — Stanford' },
+  { id: 'sa-033', source: 'safety-033', target: 'si-010', type: 'ALUMNI_OF', label: 'PhD — Harvard' },
+  { id: 'sa-035', source: 'safety-035', target: 'si-010', type: 'ALUMNI_OF', label: 'PhD — Johns Hopkins' },
+  { id: 'sa-036', source: 'safety-036', target: 'si-001', type: 'ALUMNI_OF', label: 'PhD — UC Berkeley' },
+  { id: 'sa-039', source: 'safety-039', target: 'si-007', type: 'ALUMNI_OF', label: 'PhD — Oxford' },
+]
+
+// LOCATED_IN (geo cluster)
+const safetyGeoEdges = [
+  { id: 'sl-001', source: 'safety-001', target: 'sg-002', type: 'LOCATED_IN', label: 'Berkeley' },
+  { id: 'sl-002', source: 'safety-002', target: 'sg-004', type: 'LOCATED_IN', label: 'Montreal' },
+  { id: 'sl-003', source: 'safety-003', target: 'sg-014', type: 'LOCATED_IN', label: 'Palo Alto' },
+  { id: 'sl-004', source: 'safety-004', target: 'sg-001', type: 'LOCATED_IN', label: 'San Francisco' },
+  { id: 'sl-005', source: 'safety-005', target: 'sg-001', type: 'LOCATED_IN', label: 'San Francisco' },
+  { id: 'sl-006', source: 'safety-006', target: 'sg-002', type: 'LOCATED_IN', label: 'Berkeley' },
+  { id: 'sl-007', source: 'safety-007', target: 'sg-001', type: 'LOCATED_IN', label: 'San Francisco' },
+  { id: 'sl-008', source: 'safety-008', target: 'sg-001', type: 'LOCATED_IN', label: 'San Francisco' },
+  { id: 'sl-009', source: 'safety-009', target: 'sg-003', type: 'LOCATED_IN', label: 'London' },
+  { id: 'sl-010', source: 'safety-010', target: 'sg-001', type: 'LOCATED_IN', label: 'San Francisco' },
+  { id: 'sl-011', source: 'safety-011', target: 'sg-002', type: 'LOCATED_IN', label: 'Berkeley' },
+  { id: 'sl-012', source: 'safety-012', target: 'sg-003', type: 'LOCATED_IN', label: 'London' },
+  { id: 'sl-013', source: 'safety-013', target: 'sg-001', type: 'LOCATED_IN', label: 'San Francisco' },
+  { id: 'sl-014', source: 'safety-014', target: 'sg-001', type: 'LOCATED_IN', label: 'San Francisco' },
+  { id: 'sl-015', source: 'safety-015', target: 'sg-006', type: 'LOCATED_IN', label: 'Stanford' },
+  { id: 'sl-016', source: 'safety-016', target: 'sg-003', type: 'LOCATED_IN', label: 'London' },
+  { id: 'sl-017', source: 'safety-017', target: 'sg-007', type: 'LOCATED_IN', label: 'Oxford' },
+  { id: 'sl-018', source: 'safety-018', target: 'sg-003', type: 'LOCATED_IN', label: 'London' },
+  { id: 'sl-019', source: 'safety-019', target: 'sg-004', type: 'LOCATED_IN', label: 'Montreal' },
+  { id: 'sl-020', source: 'safety-020', target: 'sg-005', type: 'LOCATED_IN', label: 'Cambridge' },
+  { id: 'sl-021', source: 'safety-021', target: 'sg-005', type: 'LOCATED_IN', label: 'Cambridge' },
+  { id: 'sl-022', source: 'safety-022', target: 'sg-009', type: 'LOCATED_IN', label: 'Pittsburgh' },
+  { id: 'sl-023', source: 'safety-023', target: 'sg-011', type: 'LOCATED_IN', label: 'Princeton' },
+  { id: 'sl-024', source: 'safety-024', target: 'sg-013', type: 'LOCATED_IN', label: 'Mountain View' },
+  { id: 'sl-025', source: 'safety-025', target: 'sg-004', type: 'LOCATED_IN', label: 'Montreal' },
+  { id: 'sl-026', source: 'safety-026', target: 'sg-012', type: 'LOCATED_IN', label: 'Austin' },
+  { id: 'sl-027', source: 'safety-027', target: 'sg-008', type: 'LOCATED_IN', label: 'Toronto' },
+  { id: 'sl-028', source: 'safety-028', target: 'sg-016', type: 'LOCATED_IN', label: 'Oakland' },
+  { id: 'sl-029', source: 'safety-029', target: 'sg-010', type: 'LOCATED_IN', label: 'New York' },
+  { id: 'sl-030', source: 'safety-030', target: 'sg-002', type: 'LOCATED_IN', label: 'Berkeley' },
+  { id: 'sl-031', source: 'safety-031', target: 'sg-002', type: 'LOCATED_IN', label: 'Berkeley' },
+  { id: 'sl-033', source: 'safety-033', target: 'sg-002', type: 'LOCATED_IN', label: 'Berkeley' },
+  { id: 'sl-034', source: 'safety-034', target: 'sg-017', type: 'LOCATED_IN', label: 'Los Angeles' },
+  { id: 'sl-035', source: 'safety-035', target: 'sg-001', type: 'LOCATED_IN', label: 'San Francisco' },
+  { id: 'sl-036', source: 'safety-036', target: 'sg-002', type: 'LOCATED_IN', label: 'Berkeley' },
+  { id: 'sl-037', source: 'safety-037', target: 'sg-002', type: 'LOCATED_IN', label: 'Berkeley' },
+  { id: 'sl-038', source: 'safety-038', target: 'sg-001', type: 'LOCATED_IN', label: 'San Francisco' },
+  { id: 'sl-039', source: 'safety-039', target: 'sg-002', type: 'LOCATED_IN', label: 'Berkeley' },
+  { id: 'sl-040', source: 'safety-040', target: 'sg-002', type: 'LOCATED_IN', label: 'Berkeley' },
+]
+
+// CO_AUTHORED_WITH (key collaborations)
+const safetyCoAuthorEdges = [
+  { id: 'sc-001', source: 'safety-004', target: 'safety-005', type: 'CO_AUTHORED_WITH', label: 'InstructGPT / RLHF (2022)' },
+  { id: 'sc-002', source: 'safety-004', target: 'safety-006', type: 'CO_AUTHORED_WITH', label: 'RLHF co-invention (2017)' },
+  { id: 'sc-003', source: 'safety-004', target: 'safety-035', type: 'CO_AUTHORED_WITH', label: 'GPT-3 / Anthropic founding' },
+  { id: 'sc-004', source: 'safety-003', target: 'safety-004', type: 'CO_AUTHORED_WITH', label: 'Co-invented RLHF' },
+  { id: 'sc-005', source: 'safety-007', target: 'safety-006', type: 'CO_AUTHORED_WITH', label: 'Superalignment (2023)' },
+  { id: 'sc-006', source: 'safety-010', target: 'safety-011', type: 'CO_AUTHORED_WITH', label: 'MMLU benchmark (2020)' },
+  { id: 'sc-007', source: 'safety-001', target: 'safety-012', type: 'CO_AUTHORED_WITH', label: 'CIRL / cooperative AI' },
+  { id: 'sc-008', source: 'safety-021', target: 'safety-012', type: 'CO_AUTHORED_WITH', label: 'CIRL paper (2016)' },
+  { id: 'sc-009', source: 'safety-002', target: 'safety-025', type: 'CO_AUTHORED_WITH', label: 'CAIS extinction statement' },
+  { id: 'sc-010', source: 'safety-008', target: 'safety-013', type: 'CO_AUTHORED_WITH', label: 'Interpretability / circuits' },
+  { id: 'sc-011', source: 'safety-014', target: 'safety-004', type: 'CO_AUTHORED_WITH', label: 'Constitutional AI (2022)' },
+  { id: 'sc-012', source: 'safety-030', target: 'safety-031', type: 'CO_AUTHORED_WITH', label: 'MIRI alignment agenda' },
+  { id: 'sc-013', source: 'safety-018', target: 'safety-016', type: 'CO_AUTHORED_WITH', label: 'Future of Life Institute' },
+  { id: 'sc-014', source: 'safety-006', target: 'safety-009', type: 'CO_AUTHORED_WITH', label: 'AI Safety via Debate (2018)' },
+  { id: 'sc-015', source: 'safety-038', target: 'safety-007', type: 'CO_AUTHORED_WITH', label: 'Scalable oversight / WebGPT' },
+]
+
+// ADVISED_BY
+const safetyAdvisedEdges = [
+  { id: 'sv-001', source: 'safety-006', target: 'safety-001', type: 'ADVISED_BY', label: 'PhD advisor' },
+  { id: 'sv-002', source: 'safety-021', target: 'safety-001', type: 'ADVISED_BY', label: 'PhD advisor' },
+  { id: 'sv-003', source: 'safety-011', target: 'safety-015', type: 'ADVISED_BY', label: 'PhD co-advisor' },
+  { id: 'sv-004', source: 'safety-036', target: 'safety-011', type: 'ADVISED_BY', label: 'PhD advisor' },
+  { id: 'sv-005', source: 'safety-005', target: 'safety-001', type: 'ADVISED_BY', label: 'academic lineage' },
+]
+
+export const mockSafetyEdges = [
+  ...safetyEmployedEdges,
+  ...safetyAlumniEdges,
+  ...safetyGeoEdges,
+  ...safetyCoAuthorEdges,
+  ...safetyAdvisedEdges,
+]
+
+export const mockSafetyNodes = [
+  ...mockSafetyPersonNodes,
+  ...mockSafetyInstitutions,
+  ...mockSafetyGeo,
+]
