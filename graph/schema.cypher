@@ -23,13 +23,6 @@ FOR (i:Institution) REQUIRE i.id IS UNIQUE;
 CREATE INDEX institution_name IF NOT EXISTS
 FOR (i:Institution) ON (i.name);
 
-// Company
-CREATE CONSTRAINT company_id_unique IF NOT EXISTS
-FOR (c:Company) REQUIRE c.id IS UNIQUE;
-
-CREATE INDEX company_name IF NOT EXISTS
-FOR (c:Company) ON (c.name);
-
 // Publication
 CREATE CONSTRAINT publication_id_unique IF NOT EXISTS
 FOR (pub:Publication) REQUIRE pub.id IS UNIQUE;
