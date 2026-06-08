@@ -1,3 +1,5 @@
+// FIXED: Import useState directly from 'react' instead of relying on window.React global
+import { useState } from 'react'
 import { ArrowUpRight, ArrowDownRight, Minus, X } from 'lucide-react'
 
 const SCORE_DIMS = [
@@ -86,31 +88,36 @@ function ResearcherCard({ generalNode, safetyNode, isSelected, onClick }) {
     <div
       className={`cmp-card${isSelected ? ' cmp-card--selected' : ''}`}
       onClick={onClick}
+      // FIXED: Added keyboard accessibility
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onClick()}
     >
       <div className="cmp-card__name">{name}</div>
       <div className="cmp-card__ranks">
-        <span className="cmp-rank-chip cmp-rank-chip--general">
-          #{gRank} General
-        </span>
-        <span className="cmp-rank-chip cmp-rank-chip--safety">
-          #{sRank} Safety
-        </span>
+        <span className="cmp-rank-chip cmp-rank-chip--general">#{gRank} General</span>
+        <span className="cmp-rank-chip cmp-rank-chip--safety">#{sRank} Safety</span>
       </div>
     </div>
   )
 }
 
 export default function ComparePanel({ overlapPairs, onClose }) {
-  // overlapPairs: Array<{ name, generalNode, safetyNode }>
-  const [selectedName, setSelected] = window.React.useState(
+  // FIXED: Uses locally-imported useState, not window.React.useState
+  const [selectedName, setSelected] = useState(
     overlapPairs[0]?.name || null
   )
 
   const selected = overlapPairs.find(p => p.name === selectedName)
 
+  // FIXED: Added keyboard close on Escape
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') onClose()
+  }
+
   return (
-    <div className="cmp-overlay">
-      <div className="cmp-panel">
+    <div className="cmp-overlay" onKeyDown={handleKeyDown}>
+      <div className="cmp-panel" role="dialog" aria-modal="true" aria-label="Cross-List Comparison">
         {/* Header */}
         <div className="cmp-header">
           <div className="cmp-header__title">

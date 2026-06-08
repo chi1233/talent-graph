@@ -22,7 +22,7 @@ export default function Sidebar({
   }, [allNodes])
 
   return (
-    <aside className="sidebar">
+    <aside className="sidebar" aria-label="Researcher filters and list">
       <div className="sidebar__header">
         <div className="sidebar__title">
           {dataset === 'safety' ? 'AI Safety · Filters' : 'General AI · Filters'}
@@ -30,8 +30,10 @@ export default function Sidebar({
 
         <div className="filter-row">
           <div style={{ flex: 1 }}>
-            <div className="filter-label">Min score</div>
+            {/* FIXED: associated label with input via htmlFor/id */}
+            <label className="filter-label" htmlFor="filter-min-score">Min score</label>
             <input
+              id="filter-min-score"
               type="number"
               className="filter-range"
               min={0} max={10} step={0.5}
@@ -40,8 +42,9 @@ export default function Sidebar({
             />
           </div>
           <div style={{ flex: 1 }}>
-            <div className="filter-label">Tier</div>
+            <label className="filter-label" htmlFor="filter-tier">Tier</label>
             <select
+              id="filter-tier"
               className="filter-select"
               value={tierFilter}
               onChange={e => onTierFilter(e.target.value)}
@@ -56,8 +59,9 @@ export default function Sidebar({
 
         <div className="filter-row">
           <div style={{ flex: 1 }}>
-            <div className="filter-label">Geography</div>
+            <label className="filter-label" htmlFor="filter-geo">Geography</label>
             <select
+              id="filter-geo"
               className="filter-select"
               value={geoFilter}
               onChange={e => onGeoFilter(e.target.value)}
@@ -71,16 +75,21 @@ export default function Sidebar({
         </div>
       </div>
 
-      <div className="sidebar__count">
+      <div className="sidebar__count" aria-live="polite" aria-atomic="true">
         {nodes.length} person{nodes.length !== 1 ? 's' : ''}
       </div>
 
-      <div className="sidebar__list">
+      <div className="sidebar__list" role="list">
         {nodes.map(node => (
           <div
             key={node.id}
             className={`node-item${selectedNode?.id === node.id ? ' node-item--selected' : ''}`}
             onClick={() => onSelect(node)}
+            // FIXED: Added keyboard accessibility for list items
+            role="listitem button"
+            tabIndex={0}
+            aria-selected={selectedNode?.id === node.id}
+            onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onSelect(node)}
           >
             <div className="node-item__name">{node.name}</div>
             <div className="node-item__sub">
@@ -88,12 +97,14 @@ export default function Sidebar({
             </div>
             <div className="node-item__score-row">
               {node.tier && (
-                <span className={`tier-badge ${tierColor(node.tier)}`}>
+                <span className={`tier-badge ${tierColor(node.tier)}`} aria-label={`Tier ${node.tier}`}>
                   T{node.tier}
                 </span>
               )}
               {node.composite_score != null && (
-                <span className="score-chip">{node.composite_score.toFixed(1)}</span>
+                <span className="score-chip" aria-label={`Score ${node.composite_score.toFixed(1)}`}>
+                  {node.composite_score.toFixed(1)}
+                </span>
               )}
               {node.geo && (
                 <span className="score-chip" style={{ marginLeft: 'auto', fontSize: 10 }}>
@@ -105,7 +116,7 @@ export default function Sidebar({
         ))}
 
         {nodes.length === 0 && (
-          <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
+          <div className="sidebar__empty" role="status">
             No results
           </div>
         )}

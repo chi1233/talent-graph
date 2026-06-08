@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import * as React from 'react'
 import { fetchGraph, searchPersons, isUsingMock, connectionReady, setActiveDataset } from './lib/neo4j.js'
 import { mockNodes } from './lib/mockData.js'
 import { mockSafetyNodes } from './lib/mockDataSafety.js'
@@ -10,8 +9,8 @@ import GraphCanvas from './components/GraphCanvas.jsx'
 import DetailPanel from './components/DetailPanel.jsx'
 import ComparePanel from './components/ComparePanel.jsx'
 
-// Expose React for ComparePanel's useState (used in overlay component)
-window.React = React
+// FIXED: Removed `window.React = React` global pollution.
+// ComparePanel now imports its own useState directly from 'react'.
 
 export default function App() {
   const [theme, setTheme]             = useState('dark')
@@ -20,6 +19,9 @@ export default function App() {
   const [graphData, setGraphData]     = useState({ nodes: [], edges: [] })
   const [filteredNodes, setFiltered]  = useState([])
   const [connectionStatus, setStatus] = useState('connecting')
+  // FIXED: Use explicit `loaded` boolean instead of fragile nodes.length dependency
+  const [dataLoaded, setDataLoaded]   = useState(false)
+  const [loadError, setLoadError]     = useState(null)
 
   // Dataset toggle: 'general' | 'safety'
   const [dataset, setDataset] = useState('general')
@@ -49,27 +51,41 @@ export default function App() {
     setQuery('')
     setTier('')
     setGeo('')
+    setDataLoaded(false)
+    setLoadError(null)
 
-    connectionReady.then(async () => {
-      setStatus(isUsingMock() ? 'mock' : 'live')
-      setActiveDataset(dataset)
-      const data = await fetchGraph()
-      setGraphData(data)
-      setFiltered(data.nodes.filter(n => n.label === 'Person'))
-    })
+    // FIXED: Added .catch() so errors surface in UI instead of silently failing
+    connectionReady
+      .then(async () => {
+        setStatus(isUsingMock() ? 'mock' : 'live')
+        setActiveDataset(dataset)
+        const data = await fetchGraph()
+        setGraphData(data)
+        setFiltered(data.nodes.filter(n => n.label === 'Person'))
+        setDataLoaded(true)
+      })
+      .catch(err => {
+        console.error('[App] Failed to load graph data:', err)
+        setStatus('mock')
+        setLoadError('Failed to load graph data. Showing cached data.')
+        setDataLoaded(true)
+      })
   }, [dataset])
 
   // Re-filter whenever query or filter state changes
+  // FIXED: Depend on `dataLoaded` boolean, not `graphData.nodes.length`
   useEffect(() => {
-    if (!graphData.nodes.length) return
+    if (!dataLoaded) return
 
     searchPersons({
       q: query,
       minScore: Number(minScore),
       tier:     tierFilter ? Number(tierFilter) : undefined,
       geo:      geoFilter  || undefined,
-    }).then(setFiltered)
-  }, [query, minScore, tierFilter, geoFilter, graphData.nodes.length])
+    })
+      .then(setFiltered)
+      .catch(err => console.error('[App] searchPersons failed:', err))
+  }, [query, minScore, tierFilter, geoFilter, dataLoaded])
 
   const toggleTheme = useCallback(() => {
     setTheme(t => t === 'dark' ? 'light' : 'dark')
@@ -85,6 +101,11 @@ export default function App() {
 
   return (
     <div className="app">
+      {loadError && (
+        <div className="app-error-banner" role="alert">
+          {loadError}
+        </div>
+      )}
       <TopBar
         query={query}
         onQuery={setQuery}

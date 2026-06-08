@@ -10,12 +10,13 @@ export default function TopBar({ query, onQuery, theme, onToggleTheme, connectio
       </div>
 
       <div className="topbar__search">
-        <Search className="topbar__search-icon" size={14} />
+        <Search className="topbar__search-icon" size={14} aria-hidden="true" />
         <input
           type="text"
           placeholder="Search people, roles, companies…"
           value={query}
           onChange={e => onQuery(e.target.value)}
+          aria-label="Search people, roles, or companies"
         />
       </div>
 
@@ -25,8 +26,9 @@ export default function TopBar({ query, onQuery, theme, onToggleTheme, connectio
           className={`dataset-toggle__btn${!isSafety ? ' dataset-toggle__btn--active' : ''}`}
           onClick={() => onDatasetToggle('general')}
           title="Top 49 AI Researchers"
+          aria-pressed={!isSafety}
         >
-          <Brain size={13} />
+          <Brain size={13} aria-hidden="true" />
           <span>General AI</span>
           <span className="dataset-toggle__count">49</span>
         </button>
@@ -34,8 +36,9 @@ export default function TopBar({ query, onQuery, theme, onToggleTheme, connectio
           className={`dataset-toggle__btn dataset-toggle__btn--safety${isSafety ? ' dataset-toggle__btn--active dataset-toggle__btn--active-safety' : ''}`}
           onClick={() => onDatasetToggle('safety')}
           title="Top 40 AI Safety Researchers"
+          aria-pressed={isSafety}
         >
-          <ShieldCheck size={13} />
+          <ShieldCheck size={13} aria-hidden="true" />
           <span>AI Safety</span>
           <span className="dataset-toggle__count">40</span>
         </button>
@@ -48,29 +51,32 @@ export default function TopBar({ query, onQuery, theme, onToggleTheme, connectio
         title="Compare researchers in both lists"
         aria-pressed={compareMode}
       >
-        <GitCompare size={14} />
+        <GitCompare size={14} aria-hidden="true" />
         <span style={{ fontSize: 12, marginLeft: 4 }}>Compare</span>
         {overlapCount > 0 && (
-          <span className="compare-badge">{overlapCount}</span>
+          <span className="compare-badge" aria-label={`${overlapCount} overlapping researchers`}>
+            {overlapCount}
+          </span>
         )}
       </button>
 
       <div className="topbar__spacer" />
 
+      {/* FIXED: Updated date from April 2026 to June 2026 */}
       <div className="topbar__status">
         <span className={`status-dot status-dot--${connectionStatus === 'live' ? 'live' : 'mock'}`} />
         {connectionStatus === 'connecting' ? 'Connecting…'
           : connectionStatus === 'live'    ? 'Neo4j Live'
-          : 'Data (As of April 2026)'}
+          : 'Data (As of June 2026)'}
       </div>
 
       <button
         className="topbar__btn"
         onClick={onToggleTheme}
         title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-        aria-label="Toggle theme"
+        aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
       >
-        {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+        {theme === 'dark' ? <Sun size={15} aria-hidden="true" /> : <Moon size={15} aria-hidden="true" />}
       </button>
     </header>
   )
