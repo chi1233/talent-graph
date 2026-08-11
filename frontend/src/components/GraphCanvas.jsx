@@ -38,6 +38,11 @@ function colorOf(n) {
   return v ? `var(${v})` : 'var(--fg-4)'
 }
 
+function prefersReducedMotion() {
+  return typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+}
+
 function opacityOf(n) {
   if (n.label !== 'Person' || n.composite_score == null) return 0.85
   return 0.4 + (n.composite_score / 10) * 0.55
@@ -131,6 +136,14 @@ export default function GraphCanvas({ nodes, edges, selectedNode, onSelect }) {
 
     svg.on('click', () => onSelectRef.current(null))
 
+    // Pulse ring — expands out of the selected node, driven entirely by CSS
+    node.append('circle')
+      .attr('class', 'ping')
+      .attr('r', d => radiusOf(d))
+      .attr('fill', 'none')
+      .attr('stroke', d => colorOf(d))
+      .attr('stroke-width', 1.5)
+
     // Selection halo — drawn behind the node, sized in the update effect
     node.append('circle')
       .attr('class', 'halo')
@@ -140,13 +153,32 @@ export default function GraphCanvas({ nodes, edges, selectedNode, onSelect }) {
       .attr('stroke-width', 1)
       .attr('stroke-opacity', 0)
 
-    node.append('circle')
+    const dot = node.append('circle')
       .attr('class', 'dot')
       .attr('r', d => radiusOf(d))
       .attr('fill', d => colorOf(d))
       .attr('fill-opacity', d => opacityOf(d))
       .attr('stroke', 'var(--bg)')
       .attr('stroke-width', 1.5)
+
+    // Nodes bloom in, biggest first, and the edges follow once they have landed
+    if (!prefersReducedMotion()) {
+      const order = [...nodeData].sort((a, b) => radiusOf(b) - radiusOf(a))
+      const rank = new Map(order.map((d, i) => [d.id, i]))
+
+      dot.attr('r', 0)
+        .transition()
+        .duration(460)
+        .delay(d => 180 + rank.get(d.id) * 7)
+        .ease(d3.easeCubicOut)
+        .attr('r', d => radiusOf(d))
+
+      link.attr('stroke-opacity', 0)
+        .transition()
+        .duration(600)
+        .delay(520)
+        .attr('stroke-opacity', 0.9)
+    }
 
     const label = node.append('text')
       .attr('dy', d => radiusOf(d) + 12)
@@ -243,6 +275,9 @@ export default function GraphCanvas({ nodes, edges, selectedNode, onSelect }) {
         if (t === id) neighbours.add(s)
       })
     }
+
+    // Drives the CSS pulse ring
+    sel.node.classed('graph-node--on', d => d.id === id)
 
     sel.node.select('.halo')
       .attr('stroke-opacity', d => (d.id === id ? 0.9 : 0))

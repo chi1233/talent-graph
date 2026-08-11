@@ -55,6 +55,8 @@
   --shadow-2: 0 16px 48px -12px rgba(0,0,0,0.7), 0 0 0 1px var(--line);
 
   --ease: cubic-bezier(0.4, 0.0, 0.2, 1);
+  /* Decelerating curve for entrances — things arrive and settle, never bounce */
+  --ease-out: cubic-bezier(0.16, 0.84, 0.44, 1);
   --dur: 130ms;
 
   /* One family throughout. Numerals use Inter's tabular figures rather than a
@@ -147,6 +149,25 @@ button { background: none; border: none; cursor: pointer; }
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
 }
+
+/* ── Motion primitives ─────────────────────────────────────────
+   Every entrance is a short translate plus a fade. Nothing bounces,
+   nothing loops, except the selection pulse on the canvas — which is
+   the one place a heartbeat carries meaning.
+   ──────────────────────────────────────────────────────────── */
+@keyframes fade      { from { opacity: 0 } to { opacity: 1 } }
+@keyframes fade-up   { from { opacity: 0; transform: translateY(8px) }  to { opacity: 1; transform: none } }
+@keyframes fade-down { from { opacity: 0; transform: translateY(-8px) } to { opacity: 1; transform: none } }
+@keyframes wipe-left { from { opacity: 0; transform: translateX(-14px) } to { opacity: 1; transform: none } }
+@keyframes wipe-right{ from { opacity: 0; transform: translateX(14px) }  to { opacity: 1; transform: none } }
+@keyframes lift      { from { opacity: 0; transform: translateY(10px) scale(0.985) } to { opacity: 1; transform: none } }
+@keyframes grow-x    { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+
+/* Shell choreography — panels arrive from their own edges, ~60ms apart */
+.topbar  { animation: fade-down 420ms var(--ease-out) both; }
+.sidebar { animation: wipe-left  520ms var(--ease-out) 70ms both; }
+.detail  { animation: wipe-right 520ms var(--ease-out) 130ms both; }
+.canvas  { animation: fade       700ms var(--ease-out) 120ms both; }
 
 /* ── Scrollbars ────────────────────────────────────────────── */
 .scroll { overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
@@ -386,6 +407,14 @@ button { background: none; border: none; cursor: pointer; }
 }
 .icon-btn:hover { background: var(--surface-2); color: var(--fg); }
 
+/* Controls give slightly under the cursor */
+.btn, .icon-btn, .seg__btn { transition: background var(--dur) var(--ease), color var(--dur) var(--ease),
+                                         border-color var(--dur) var(--ease), transform 90ms var(--ease); }
+.btn:active, .icon-btn:active, .seg__btn:active { transform: scale(0.96); }
+.chip { transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease),
+                    background var(--dur) var(--ease), transform 140ms var(--ease-out); }
+.chip:hover { transform: translateY(-1px); }
+
 .spacer { flex: 1; min-width: 8px; }
 
 /* Status */
@@ -551,6 +580,13 @@ button { background: none; border: none; cursor: pointer; }
   transition: background var(--dur) var(--ease);
 }
 
+/* Rows cascade in as they mount — on load, on dataset switch, and as
+   filtering brings new people into the list */
+.row {
+  animation: fade-up 320ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 16ms + 140ms);
+}
+
 .row:hover { background: var(--surface-2); }
 
 .row--on { background: var(--surface-2); }
@@ -649,7 +685,23 @@ button { background: none; border: none; cursor: pointer; }
 .canvas svg { width: 100%; height: 100%; display: block; }
 
 .graph-node circle { cursor: pointer; transition: fill-opacity var(--dur) var(--ease); }
-.graph-node:hover circle { fill-opacity: 1; }
+.graph-node:hover .dot { fill-opacity: 1; }
+
+/* Selection pulse — a slow ring leaving the selected node. The only looping
+   animation in the app, and it marks where you are on a crowded canvas. */
+.graph-node .ping {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  pointer-events: none;
+}
+.graph-node--on .ping { animation: ping 2.4s var(--ease-out) infinite; }
+
+@keyframes ping {
+  0%   { opacity: 0.45; transform: scale(1); }
+  65%  { opacity: 0;    transform: scale(2.6); }
+  100% { opacity: 0;    transform: scale(2.6); }
+}
 .graph-node text {
   font-family: var(--font);
   font-size: 10px;
@@ -671,6 +723,7 @@ button { background: none; border: none; cursor: pointer; }
 }
 
 .legend {
+  animation: fade-down 460ms var(--ease-out) 320ms both;
   top: 12px;
   left: 12px;
   padding: 9px 11px;
@@ -706,6 +759,7 @@ button { background: none; border: none; cursor: pointer; }
 }
 
 .canvas-hint {
+  animation: fade-up 460ms var(--ease-out) 400ms both;
   bottom: 12px;
   left: 50%;
   transform: translateX(-50%);
@@ -766,6 +820,15 @@ button { background: none; border: none; cursor: pointer; }
 .detail__empty-mark { color: var(--fg-4); }
 
 .detail__scroll { flex: 1; overflow-y: auto; }
+
+/* Re-keyed per node, so the inspector reassembles each time you select */
+.detail__scroll > * { animation: fade-up 340ms var(--ease-out) both; }
+.detail__scroll > *:nth-child(1) { animation-delay: 0ms }
+.detail__scroll > *:nth-child(2) { animation-delay: 40ms }
+.detail__scroll > *:nth-child(3) { animation-delay: 80ms }
+.detail__scroll > *:nth-child(4) { animation-delay: 115ms }
+.detail__scroll > *:nth-child(5) { animation-delay: 145ms }
+.detail__scroll > *:nth-child(n+6) { animation-delay: 170ms }
 
 .detail__head { padding: 16px 16px 14px; border-bottom: 1px solid var(--line); }
 
@@ -832,6 +895,7 @@ button { background: none; border: none; cursor: pointer; }
 }
 
 .composite__val {
+  animation: lift 460ms var(--ease-out) 90ms both;
   font-variant-numeric: tabular-nums;
   font-size: 38px;
   font-weight: 600;
@@ -890,8 +954,15 @@ button { background: none; border: none; cursor: pointer; }
 .bar__fill {
   height: 100%;
   border-radius: 2px;
+  transform-origin: left center;
   transition: width 420ms var(--ease);
+  animation: grow-x 520ms var(--ease-out) both;
 }
+.bar:nth-child(1) .bar__fill { animation-delay: 150ms }
+.bar:nth-child(2) .bar__fill { animation-delay: 195ms }
+.bar:nth-child(3) .bar__fill { animation-delay: 240ms }
+.bar:nth-child(4) .bar__fill { animation-delay: 285ms }
+.bar:nth-child(5) .bar__fill { animation-delay: 330ms }
 
 .bar__val {
   font-variant-numeric: tabular-nums;
@@ -987,12 +1058,6 @@ button { background: none; border: none; cursor: pointer; }
   animation: fade 140ms var(--ease);
 }
 
-@keyframes fade { from { opacity: 0 } to { opacity: 1 } }
-@keyframes rise {
-  from { opacity: 0; transform: translateY(6px) scale(0.995) }
-  to   { opacity: 1; transform: none }
-}
-
 .modal {
   width: 100%;
   max-width: 880px;
@@ -1003,8 +1068,17 @@ button { background: none; border: none; cursor: pointer; }
   background: var(--surface);
   border-radius: var(--r3);
   box-shadow: var(--shadow-2);
-  animation: rise 180ms var(--ease);
+  animation: lift 260ms var(--ease-out);
 }
+
+/* Compare rows cascade in behind the modal */
+.cmp-card  { animation: fade-up 300ms var(--ease-out) both; }
+.cmp-card:nth-child(1) { animation-delay: 120ms }
+.cmp-card:nth-child(2) { animation-delay: 155ms }
+.cmp-card:nth-child(3) { animation-delay: 190ms }
+.cmp-card:nth-child(4) { animation-delay: 225ms }
+.cmp-card:nth-child(5) { animation-delay: 260ms }
+.cmp-card:nth-child(n+6) { animation-delay: 290ms }
 
 .modal__head {
   display: flex;
@@ -1190,7 +1264,21 @@ button { background: none; border: none; cursor: pointer; }
 .cmp-side--g .cmp-track { justify-content: flex-end; }
 .cmp-side--s .cmp-track { justify-content: flex-start; }
 
-.cmp-fill { height: 100%; border-radius: 2px; transition: width 420ms var(--ease); }
+.cmp-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 420ms var(--ease);
+  animation: grow-x 540ms var(--ease-out) both;
+}
+/* Each wing grows away from the delta pill in the middle */
+.cmp-side--g .cmp-fill { transform-origin: right center; }
+.cmp-side--s .cmp-fill { transform-origin: left center; }
+.cmp-row:nth-child(1) .cmp-fill { animation-delay: 160ms }
+.cmp-row:nth-child(2) .cmp-fill { animation-delay: 200ms }
+.cmp-row:nth-child(3) .cmp-fill { animation-delay: 240ms }
+.cmp-row:nth-child(4) .cmp-fill { animation-delay: 280ms }
+.cmp-row:nth-child(5) .cmp-fill { animation-delay: 320ms }
+.cmp-row:nth-child(6) .cmp-fill { animation-delay: 360ms }
 
 .cmp-delta-cell { display: grid; place-items: center; }
 
@@ -1281,6 +1369,9 @@ button { background: none; border: none; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     transition-duration: 0.01ms !important;
   }
+  /* Kill the loop outright rather than spinning it at 0.01ms forever */
+  .graph-node--on .ping { animation: none !important; opacity: 0.45 !important; }
 }

@@ -70,7 +70,8 @@ export default function DetailPanel({ node, edges, allNodes }) {
         <span className="panel-head__meta">{node.label}</span>
       </div>
 
-      <div className="detail__scroll scroll">
+      {/* Keyed by node so the sections re-run their cascade on every selection */}
+      <div className="detail__scroll scroll" key={node.id}>
         <div className="detail__head">
           {(node.tier || node.geo) && (
             <div className="detail__kicker">

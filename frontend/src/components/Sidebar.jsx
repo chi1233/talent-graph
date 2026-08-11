@@ -91,6 +91,8 @@ export default function Sidebar({
             <div
               key={node.id}
               className={`row${on ? ' row--on' : ''}`}
+              // Drives the cascade delay; capped so long lists don't crawl in
+              style={{ '--i': Math.min(i, 22) }}
               onClick={() => onSelect(node)}
               role="listitem"
               tabIndex={0}
