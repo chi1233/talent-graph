@@ -1,9 +1,11 @@
 import { useMemo } from 'react'
 
-function tierColor(tier) {
-  if (tier === 1) return 'tier-badge--1'
-  if (tier === 2) return 'tier-badge--2'
-  return 'tier-badge--3'
+function tierClass(tier) {
+  return `tier tier--${tier === 1 ? '1' : tier === 2 ? '2' : '3'}`
+}
+
+function scoreColor(v) {
+  return v >= 7 ? 'var(--sig-hi)' : v >= 5 ? 'var(--sig-mid)' : 'var(--sig-lo)'
 }
 
 export default function Sidebar({
@@ -14,55 +16,62 @@ export default function Sidebar({
   allNodes,
   dataset,
 }) {
-  // Collect unique geo values for the filter dropdown
   const geoOptions = useMemo(() => {
     const seen = new Set()
     allNodes.forEach(n => { if (n.geo) seen.add(n.geo) })
     return [...seen].sort()
   }, [allNodes])
 
+  const hasFilters = Number(minScore) > 0 || tierFilter !== '' || geoFilter !== ''
+
   return (
     <aside className="sidebar" aria-label="Researcher filters and list">
-      <div className="sidebar__header">
-        <div className="sidebar__title">
-          {dataset === 'safety' ? 'AI Safety · Filters' : 'General AI · Filters'}
+      <div className="panel-head">
+        <span className="panel-head__title">
+          {dataset === 'safety' ? 'AI Safety' : 'General AI'}
+        </span>
+        <span className="panel-head__meta" aria-live="polite" aria-atomic="true">
+          {nodes.length}
+        </span>
+      </div>
+
+      <div className="filters">
+        <div className="field">
+          <label className="field__label" htmlFor="f-score">
+            <span>Minimum score</span>
+            <span className="field__value">{Number(minScore).toFixed(1)}</span>
+          </label>
+          <input
+            id="f-score"
+            type="range"
+            className="range"
+            min={0} max={10} step={0.5}
+            value={minScore}
+            onChange={e => onMinScore(e.target.value)}
+          />
         </div>
 
-        <div className="filter-row">
-          <div style={{ flex: 1 }}>
-            {/* FIXED: associated label with input via htmlFor/id */}
-            <label className="filter-label" htmlFor="filter-min-score">Min score</label>
-            <input
-              id="filter-min-score"
-              type="number"
-              className="filter-range"
-              min={0} max={10} step={0.5}
-              value={minScore}
-              onChange={e => onMinScore(e.target.value)}
-            />
-          </div>
-          <div style={{ flex: 1 }}>
-            <label className="filter-label" htmlFor="filter-tier">Tier</label>
+        <div className="field-row">
+          <div className="field">
+            <label className="field__label" htmlFor="f-tier"><span>Tier</span></label>
             <select
-              id="filter-tier"
-              className="filter-select"
+              id="f-tier"
+              className="select"
               value={tierFilter}
               onChange={e => onTierFilter(e.target.value)}
             >
-              <option value="">All</option>
+              <option value="">All tiers</option>
               <option value="1">Tier 1</option>
               <option value="2">Tier 2</option>
               <option value="3">Tier 3</option>
             </select>
           </div>
-        </div>
 
-        <div className="filter-row">
-          <div style={{ flex: 1 }}>
-            <label className="filter-label" htmlFor="filter-geo">Geography</label>
+          <div className="field">
+            <label className="field__label" htmlFor="f-geo"><span>Region</span></label>
             <select
-              id="filter-geo"
-              className="filter-select"
+              id="f-geo"
+              className="select"
               value={geoFilter}
               onChange={e => onGeoFilter(e.target.value)}
             >
@@ -75,49 +84,57 @@ export default function Sidebar({
         </div>
       </div>
 
-      <div className="sidebar__count" aria-live="polite" aria-atomic="true">
-        {nodes.length} person{nodes.length !== 1 ? 's' : ''}
-      </div>
+      <div className="list scroll" role="list">
+        {nodes.map((node, i) => {
+          const on = selectedNode?.id === node.id
+          return (
+            <div
+              key={node.id}
+              className={`row${on ? ' row--on' : ''}`}
+              onClick={() => onSelect(node)}
+              role="listitem"
+              tabIndex={0}
+              aria-current={on ? 'true' : undefined}
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  onSelect(node)
+                }
+              }}
+            >
+              <span className="row__rank" aria-hidden="true">{i + 1}</span>
 
-      <div className="sidebar__list" role="list">
-        {nodes.map(node => (
-          <div
-            key={node.id}
-            className={`node-item${selectedNode?.id === node.id ? ' node-item--selected' : ''}`}
-            onClick={() => onSelect(node)}
-            // FIXED: Added keyboard accessibility for list items
-            role="listitem button"
-            tabIndex={0}
-            aria-selected={selectedNode?.id === node.id}
-            onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onSelect(node)}
-          >
-            <div className="node-item__name">{node.name}</div>
-            <div className="node-item__sub">
-              {[node.role, node.company].filter(Boolean).join(' · ')}
+              <div className="row__body">
+                <div className="row__name">{node.name}</div>
+                <div className="row__sub">
+                  {[node.role, node.company].filter(Boolean).join(' · ') || node.geo || '—'}
+                </div>
+              </div>
+
+              <div className="row__meta">
+                {node.tier && (
+                  <span className={tierClass(node.tier)} aria-label={`Tier ${node.tier}`}>
+                    T{node.tier}
+                  </span>
+                )}
+                {node.composite_score != null && (
+                  <span
+                    className="row__score"
+                    style={{ color: scoreColor(node.composite_score) }}
+                    aria-label={`Score ${node.composite_score.toFixed(1)}`}
+                  >
+                    {node.composite_score.toFixed(1)}
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="node-item__score-row">
-              {node.tier && (
-                <span className={`tier-badge ${tierColor(node.tier)}`} aria-label={`Tier ${node.tier}`}>
-                  T{node.tier}
-                </span>
-              )}
-              {node.composite_score != null && (
-                <span className="score-chip" aria-label={`Score ${node.composite_score.toFixed(1)}`}>
-                  {node.composite_score.toFixed(1)}
-                </span>
-              )}
-              {node.geo && (
-                <span className="score-chip" style={{ marginLeft: 'auto', fontSize: 10 }}>
-                  {node.geo}
-                </span>
-              )}
-            </div>
-          </div>
-        ))}
+          )
+        })}
 
         {nodes.length === 0 && (
-          <div className="sidebar__empty" role="status">
-            No results
+          <div className="empty" role="status">
+            No matches
+            {hasFilters && <div className="empty__hint">Try widening the filters</div>}
           </div>
         )}
       </div>

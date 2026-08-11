@@ -1,90 +1,121 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
 import * as d3 from 'd3'
 
-// Color map per node label
-const LABEL_COLOR = {
-  Person:           '#5b8ff9',
-  Institution:      '#34d399',
-  Company:          '#a78bfa',
-  GeographicCluster:'#fbbf24',
-  Publication:      '#f87171',
+// Node type → CSS custom property holding its colour
+const LABEL_VAR = {
+  Person:            '--d-person',
+  Institution:       '--d-inst',
+  Company:           '--d-company',
+  GeographicCluster: '--d-geo',
+  Publication:       '--d-pub',
 }
 
-const LABEL_RADIUS = {
-  Person:           10,
-  Institution:      14,
-  Company:          13,
-  GeographicCluster:12,
-  Publication:      8,
+const LABEL_TEXT = {
+  Person:            'Person',
+  Institution:       'Institution',
+  Company:           'Company',
+  GeographicCluster: 'Geography',
+  Publication:       'Publication',
 }
 
-function nodeColor(n) { return LABEL_COLOR[n.label] || '#9097ae' }
-function nodeRadius(n) { return LABEL_RADIUS[n.label] || 10 }
-
-// Score drives opacity for Person nodes
-function nodeOpacity(n) {
-  if (n.label !== 'Person' || n.composite_score == null) return 0.8
-  return 0.5 + (n.composite_score / 10) * 0.5
+// Person radius scales with composite score; other types are fixed
+const BASE_RADIUS = {
+  Person:            6,
+  Institution:       10,
+  Company:           9,
+  GeographicCluster: 8,
+  Publication:       6,
 }
 
-export default function GraphCanvas({ nodes, edges, selectedNode, onSelect, theme }) {
+function radiusOf(n) {
+  const base = BASE_RADIUS[n.label] ?? 7
+  if (n.label !== 'Person' || n.composite_score == null) return base
+  return base + (n.composite_score / 10) * 5
+}
+
+function colorOf(n) {
+  const v = LABEL_VAR[n.label]
+  return v ? `var(${v})` : 'var(--fg-4)'
+}
+
+function opacityOf(n) {
+  if (n.label !== 'Person' || n.composite_score == null) return 0.85
+  return 0.4 + (n.composite_score / 10) * 0.55
+}
+
+export default function GraphCanvas({ nodes, edges, selectedNode, onSelect }) {
   const svgRef = useRef(null)
-  const simRef = useRef(null)
+  const selRef = useRef(null)
+  const declutterRef = useRef(() => {})
+  const pinnedRef = useRef(new Set())
+
+  // Keep the latest onSelect without restarting the simulation
+  const onSelectRef = useRef(onSelect)
+  onSelectRef.current = onSelect
+
+  const counts = useMemo(() => {
+    const c = {}
+    nodes.forEach(n => { c[n.label] = (c[n.label] || 0) + 1 })
+    return c
+  }, [nodes])
 
   useEffect(() => {
-    if (!nodes.length) return
+    if (!nodes.length || !svgRef.current) return
 
     const container = svgRef.current.parentElement
     const W = container.clientWidth
     const H = container.clientHeight
 
-    // Clear previous render
-    d3.select(svgRef.current).selectAll('*').remove()
-
     const svg = d3.select(svgRef.current)
-      .attr('width', W)
-      .attr('height', H)
+    svg.selectAll('*').remove()
+    svg.attr('width', W).attr('height', H)
 
-    // Zoom layer
     const g = svg.append('g')
-    svg.call(
-      d3.zoom().scaleExtent([0.2, 4]).on('zoom', e => g.attr('transform', e.transform))
-    )
 
-    // Build working copies (D3 mutates them)
+    let zoomTimer = null
+    const zoom = d3.zoom()
+      .scaleExtent([0.25, 4])
+      .on('zoom', e => {
+        g.attr('transform', e.transform)
+        // Labels grow more slowly than the graph, so zooming in makes room for more of them
+        g.selectAll('text').attr('font-size', 10 / Math.sqrt(e.transform.k))
+        clearTimeout(zoomTimer)
+        zoomTimer = setTimeout(() => declutterRef.current(), 90)
+      })
+    svg.call(zoom).on('dblclick.zoom', null)
+
+    // D3 mutates its data, so work on copies
     const nodeData = nodes.map(n => ({ ...n }))
     const nodeById = new Map(nodeData.map(n => [n.id, n]))
-
     const edgeData = edges
       .map(e => ({ ...e, source: nodeById.get(e.source), target: nodeById.get(e.target) }))
       .filter(e => e.source && e.target)
 
-    // Simulation
     const sim = d3.forceSimulation(nodeData)
-      .force('link',   d3.forceLink(edgeData).id(d => d.id).distance(90).strength(0.4))
-      .force('charge', d3.forceManyBody().strength(-220))
-      .force('center', d3.forceCenter(W / 2, H / 2))
-      .force('collide', d3.forceCollide().radius(d => nodeRadius(d) + 6))
-    simRef.current = sim
+      .force('link',    d3.forceLink(edgeData).id(d => d.id).distance(96).strength(0.35))
+      .force('charge',  d3.forceManyBody().strength(-260))
+      .force('center',  d3.forceCenter(W / 2, H / 2))
+      .force('collide', d3.forceCollide().radius(d => radiusOf(d) + 9))
+      .force('x',       d3.forceX(W / 2).strength(0.03))
+      .force('y',       d3.forceY(H / 2).strength(0.03))
 
-    // Edges
-    const link = g.append('g').selectAll('line')
+    const link = g.append('g')
+      .attr('stroke', 'var(--line-2)')
+      .attr('stroke-opacity', 0.9)
+      .selectAll('line')
       .data(edgeData).join('line')
-      .attr('stroke', 'var(--border)')
-      .attr('stroke-width', 1.2)
+      .attr('stroke-width', 1)
 
-    // Edge labels (shown on hover — simple title approach)
     link.append('title').text(d => d.type)
 
-    // Nodes
-    const node = g.append('g').selectAll('g')
+    const node = g.append('g')
+      .selectAll('g')
       .data(nodeData).join('g')
       .attr('class', 'graph-node')
-      .style('cursor', 'pointer')
       .call(
         d3.drag()
           .on('start', (event, d) => {
-            if (!event.active) sim.alphaTarget(0.3).restart()
+            if (!event.active) sim.alphaTarget(0.25).restart()
             d.fx = d.x; d.fy = d.y
           })
           .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y })
@@ -93,66 +124,179 @@ export default function GraphCanvas({ nodes, edges, selectedNode, onSelect, them
             d.fx = null; d.fy = null
           })
       )
+      .on('click', (event, d) => {
+        event.stopPropagation()
+        onSelectRef.current(d)
+      })
 
-    node.on('click', (event, d) => {
-      event.stopPropagation()
-      onSelect(d)
-    })
+    svg.on('click', () => onSelectRef.current(null))
 
-    svg.on('click', () => onSelect(null))
-
-    // Circle
+    // Selection halo — drawn behind the node, sized in the update effect
     node.append('circle')
-      .attr('r', d => nodeRadius(d))
-      .attr('fill', d => nodeColor(d))
-      .attr('fill-opacity', d => nodeOpacity(d))
-      .attr('stroke', d => nodeColor(d))
-      .attr('stroke-width', 2)
+      .attr('class', 'halo')
+      .attr('r', d => radiusOf(d) + 5)
+      .attr('fill', 'none')
+      .attr('stroke', d => colorOf(d))
+      .attr('stroke-width', 1)
+      .attr('stroke-opacity', 0)
 
-    // Label
-    node.append('text')
-      .attr('dy', d => nodeRadius(d) + 11)
+    node.append('circle')
+      .attr('class', 'dot')
+      .attr('r', d => radiusOf(d))
+      .attr('fill', d => colorOf(d))
+      .attr('fill-opacity', d => opacityOf(d))
+      .attr('stroke', 'var(--bg)')
+      .attr('stroke-width', 1.5)
+
+    const label = node.append('text')
+      .attr('dy', d => radiusOf(d) + 12)
       .attr('text-anchor', 'middle')
       .attr('font-size', 10)
-      .attr('fill', 'var(--text-2)')
+      .attr('fill', 'var(--fg-3)')
+      .style('opacity', 0)
       .text(d => d.name || d.label)
 
     node.append('title').text(d => d.name || d.label)
 
+    // Greedy label decluttering: bigger nodes win, anything that would collide
+    // with an already-placed label is dropped. Re-run whenever the layout or
+    // zoom level changes, never on every frame.
+    declutterRef.current = () => {
+      const pinned = pinnedRef.current
+      const items = label.nodes()
+        .map(el => ({ el, d: d3.select(el).datum() }))
+        .filter(it => it.d && it.d.x != null)
+        .sort((a, b) => {
+          const pa = pinned.has(a.d.id) ? 1 : 0
+          const pb = pinned.has(b.d.id) ? 1 : 0
+          if (pa !== pb) return pb - pa
+          return radiusOf(b.d) - radiusOf(a.d)
+        })
+
+      // Seed with the node circles so labels never sit on top of a node
+      const placed = nodeData
+        .filter(d => d.x != null)
+        .map(d => {
+          const r = radiusOf(d) + 1
+          return { x: d.x - r, y: d.y - r, r: d.x + r, b: d.y + r }
+        })
+
+      for (const { el, d } of items) {
+        const bb = el.getBBox()
+        const box = {
+          x: d.x + bb.x - 3, y: d.y + bb.y - 2,
+          r: d.x + bb.x + bb.width + 3, b: d.y + bb.y + bb.height + 2,
+        }
+        const clash = placed.some(p => !(box.r < p.x || p.r < box.x || box.b < p.y || p.b < box.y))
+        el.style.opacity = clash ? 0 : 1
+        if (!clash) placed.push(box)
+      }
+    }
+
+    let ticks = 0
     sim.on('tick', () => {
       link
         .attr('x1', d => d.source.x)
         .attr('y1', d => d.source.y)
         .attr('x2', d => d.target.x)
         .attr('y2', d => d.target.y)
-
       node.attr('transform', d => `translate(${d.x},${d.y})`)
+      if (++ticks % 25 === 0) declutterRef.current()
     })
+    sim.on('end', () => declutterRef.current())
 
-    return () => sim.stop()
-  }, [nodes, edges])   // re-run only when data changes
+    selRef.current = { node, link }
 
-  // Highlight selected node without restarting sim
+    // Keep the graph centred when the pane is resized
+    const ro = new ResizeObserver(([entry]) => {
+      const w = entry.contentRect.width
+      const h = entry.contentRect.height
+      if (!w || !h) return
+      svg.attr('width', w).attr('height', h)
+      sim.force('center', d3.forceCenter(w / 2, h / 2))
+      sim.force('x', d3.forceX(w / 2).strength(0.03))
+      sim.force('y', d3.forceY(h / 2).strength(0.03))
+      sim.alpha(0.2).restart()
+    })
+    ro.observe(container)
+
+    return () => {
+      clearTimeout(zoomTimer)
+      ro.disconnect()
+      sim.stop()
+    }
+  }, [nodes, edges])
+
+  // Selection: highlight the node and dim everything it isn't connected to
   useEffect(() => {
-    if (!svgRef.current) return
-    d3.select(svgRef.current)
-      .selectAll('.graph-node circle')
-      .attr('stroke-width', d => d.id === selectedNode?.id ? 3.5 : 2)
-      .attr('stroke-opacity', d => d.id === selectedNode?.id ? 1 : 0.7)
-  }, [selectedNode])
+    const sel = selRef.current
+    if (!sel) return
+    const id = selectedNode?.id
+
+    const idOf = (v) => (v && typeof v === 'object' ? v.id : v)
+    const neighbours = new Set()
+    if (id) {
+      neighbours.add(id)
+      sel.link.each(d => {
+        const s = idOf(d.source), t = idOf(d.target)
+        if (s === id) neighbours.add(t)
+        if (t === id) neighbours.add(s)
+      })
+    }
+
+    sel.node.select('.halo')
+      .attr('stroke-opacity', d => (d.id === id ? 0.9 : 0))
+
+    sel.node.select('.dot')
+      .attr('fill-opacity', d =>
+        !id ? opacityOf(d) : neighbours.has(d.id) ? Math.max(opacityOf(d), 0.9) : opacityOf(d) * 0.28)
+
+    sel.node.select('text')
+      .attr('fill', d => (!id || neighbours.has(d.id) ? 'var(--fg-3)' : 'var(--fg-4)'))
+      .attr('fill-opacity', d => (!id || neighbours.has(d.id) ? 1 : 0.35))
+
+    // The selection and everything it touches always keeps its label
+    pinnedRef.current = neighbours
+    declutterRef.current()
+
+    sel.link
+      .attr('stroke-opacity', d => {
+        if (!id) return 0.9
+        return idOf(d.source) === id || idOf(d.target) === id ? 1 : 0.2
+      })
+      .attr('stroke', d => {
+        if (!id) return 'var(--line-2)'
+        return idOf(d.source) === id || idOf(d.target) === id ? 'var(--fg-3)' : 'var(--line-2)'
+      })
+  }, [selectedNode, nodes])
+
+  const legendTypes = Object.keys(LABEL_VAR).filter(l => counts[l])
 
   return (
-    <div className="canvas-wrap">
-      <svg ref={svgRef} />
-      <div className="canvas-legend">
-        {Object.entries(LABEL_COLOR).map(([label, color]) => (
-          <div key={label} className="canvas-legend-item">
-            <span className="canvas-legend-dot" style={{ background: color }} />
-            <span className="canvas-legend-label">{label === 'GeographicCluster' ? 'Geographic Cluster' : label}</span>
-          </div>
-        ))}
+    <div className="canvas">
+      <svg ref={svgRef} role="img" aria-label="Talent graph" />
+
+      {legendTypes.length > 0 && (
+        <div className="canvas-card legend">
+          {legendTypes.map(label => (
+            <div key={label} className="legend__row">
+              <span className="legend__dot" style={{ background: `var(${LABEL_VAR[label]})` }} />
+              <span className="legend__label">{LABEL_TEXT[label]}</span>
+              <span className="legend__count">{counts[label]}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {nodes.length === 0 && (
+        <div className="canvas-empty">Loading graph…</div>
+      )}
+
+      <div className="canvas-card canvas-hint">
+        <span><kbd>scroll</kbd>zoom</span>
+        <span><kbd>drag</kbd>pan</span>
+        <span><kbd>click</kbd>inspect</span>
       </div>
-      <div className="canvas-hint">Scroll to zoom · Drag to pan · Click a node</div>
     </div>
   )
 }

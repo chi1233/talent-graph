@@ -12,8 +12,18 @@ import ComparePanel from './components/ComparePanel.jsx'
 // FIXED: Removed `window.React = React` global pollution.
 // ComparePanel now imports its own useState directly from 'react'.
 
+const THEME_KEY = 'meridian-theme'
+
+function initialTheme() {
+  try {
+    const t = localStorage.getItem(THEME_KEY)
+    if (t === 'light' || t === 'dark') return t
+  } catch { /* storage unavailable — fall through to the default */ }
+  return 'dark'
+}
+
 export default function App() {
-  const [theme, setTheme]             = useState('dark')
+  const [theme, setTheme]             = useState(initialTheme)
   const [query, setQuery]             = useState('')
   const [selectedNode, setSelected]   = useState(null)
   const [graphData, setGraphData]     = useState({ nodes: [], edges: [] })
@@ -40,9 +50,11 @@ export default function App() {
     []
   )
 
-  // Apply theme to document root
+  // Apply theme to document root and remember it
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
+    document.documentElement.style.background = theme === 'light' ? '#fcfcfd' : '#08090a'
+    try { localStorage.setItem(THEME_KEY, theme) } catch { /* non-fatal */ }
   }, [theme])
 
   // Load graph once connection is resolved (or re-load on dataset switch)
@@ -136,8 +148,6 @@ export default function App() {
         edges={graphData.edges}
         selectedNode={selectedNode}
         onSelect={setSelected}
-        theme={theme}
-        dataset={dataset}
       />
       <DetailPanel
         node={selectedNode}
