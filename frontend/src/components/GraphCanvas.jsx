@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from 'react'
+import { useEffect, useRef, useMemo, useState } from 'react'
 import * as d3 from 'd3'
 
 // Node type → CSS custom property holding its colour
@@ -50,6 +50,10 @@ function opacityOf(n) {
 
 export default function GraphCanvas({ nodes, edges, selectedNode, onSelect }) {
   const svgRef = useRef(null)
+  // The hint is onboarding chrome — it retires once the graph has been used
+  const [used, setUsed] = useState(false)
+  const markUsed = useRef(() => {})
+  markUsed.current = () => setUsed(u => u || true)
   const selRef = useRef(null)
   const declutterRef = useRef(() => {})
   const pinnedRef = useRef(new Set())
@@ -81,6 +85,7 @@ export default function GraphCanvas({ nodes, edges, selectedNode, onSelect }) {
     const zoom = d3.zoom()
       .scaleExtent([0.25, 4])
       .on('zoom', e => {
+        markUsed.current()
         g.attr('transform', e.transform)
         // Labels grow more slowly than the graph, so zooming in makes room for more of them
         g.selectAll('text').attr('font-size', 10 / Math.sqrt(e.transform.k))
@@ -120,6 +125,7 @@ export default function GraphCanvas({ nodes, edges, selectedNode, onSelect }) {
       .call(
         d3.drag()
           .on('start', (event, d) => {
+            markUsed.current()
             if (!event.active) sim.alphaTarget(0.25).restart()
             d.fx = d.x; d.fy = d.y
           })
@@ -131,6 +137,7 @@ export default function GraphCanvas({ nodes, edges, selectedNode, onSelect }) {
       )
       .on('click', (event, d) => {
         event.stopPropagation()
+        markUsed.current()
         onSelectRef.current(d)
       })
 
@@ -308,7 +315,7 @@ export default function GraphCanvas({ nodes, edges, selectedNode, onSelect }) {
   const legendTypes = Object.keys(LABEL_VAR).filter(l => counts[l])
 
   return (
-    <div className="canvas">
+    <div className={`canvas${used ? ' canvas--used' : ''}`}>
       <svg ref={svgRef} role="img" aria-label="Talent graph" />
 
       {legendTypes.length > 0 && (

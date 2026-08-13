@@ -566,7 +566,7 @@ button { background: none; border: none; cursor: pointer; }
 }
 
 /* Roster list */
-.list { flex: 1; overflow-y: auto; }
+.list { flex: 1; overflow-y: auto; padding: 5px 0 10px; }
 
 .row {
   position: relative;
@@ -574,9 +574,10 @@ button { background: none; border: none; cursor: pointer; }
   grid-template-columns: 22px 1fr auto;
   align-items: baseline;
   column-gap: 8px;
-  padding: 9px 14px 9px 12px;
+  margin: 1px 6px;
+  padding: 8px 8px 8px 6px;
+  border-radius: var(--r1);
   cursor: pointer;
-  border-bottom: 1px solid var(--line);
   transition: background var(--dur) var(--ease);
 }
 
@@ -593,8 +594,9 @@ button { background: none; border: none; cursor: pointer; }
 .row--on::before {
   content: '';
   position: absolute;
-  left: 0; top: 0; bottom: 0;
+  left: -6px; top: 3px; bottom: 3px;
   width: 2px;
+  border-radius: 1px;
   background: var(--fg);
 }
 
@@ -759,7 +761,10 @@ button { background: none; border: none; cursor: pointer; }
 }
 
 .canvas-hint {
-  animation: fade-up 460ms var(--ease-out) 400ms both;
+  /* `backwards`, not `both`: a forwards fill would pin opacity at 1 and the
+     retirement fade below would never run. */
+  animation: fade-up 460ms var(--ease-out) 400ms backwards;
+  transition: opacity 500ms var(--ease), visibility 500ms;
   bottom: 12px;
   left: 50%;
   transform: translateX(-50%);
@@ -783,6 +788,9 @@ button { background: none; border: none; cursor: pointer; }
   padding: 1px 4px;
   margin-right: 4px;
 }
+
+/* Once you have zoomed, dragged, or picked a node, the hint has done its job */
+.canvas--used .canvas-hint { opacity: 0; visibility: hidden; }
 
 .canvas-empty {
   position: absolute;
@@ -973,10 +981,15 @@ button { background: none; border: none; cursor: pointer; }
 }
 
 /* Key/value grid */
-.kv { display: flex; flex-direction: column; gap: 8px; }
-.kv__row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.kv { display: flex; flex-direction: column; gap: 7px; }
+.kv__row {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  align-items: baseline;
+  gap: 12px;
+}
 .kv__k { font-size: 11.5px; color: var(--fg-3); white-space: nowrap; }
-.kv__v { font-size: 12px; color: var(--fg); text-align: right; }
+.kv__v { font-size: 12px; color: var(--fg); line-height: 1.45; }
 
 /* Links */
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -1021,10 +1034,8 @@ button { background: none; border: none; cursor: pointer; }
   grid-template-columns: 1fr auto;
   align-items: baseline;
   gap: 10px;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--line);
+  padding: 5px 0;
 }
-.conn:last-child { border-bottom: none; }
 .conn:first-child { padding-top: 0; }
 
 .conn__name {
@@ -1113,13 +1124,15 @@ button { background: none; border: none; cursor: pointer; }
 .cmp-list {
   border-right: 1px solid var(--line);
   overflow-y: auto;
+  padding: 6px 0;
 }
 
 .cmp-card {
   position: relative;
-  padding: 10px 14px 10px 12px;
+  margin: 1px 6px;
+  padding: 9px 8px 9px 6px;
+  border-radius: var(--r1);
   cursor: pointer;
-  border-bottom: 1px solid var(--line);
   transition: background var(--dur) var(--ease);
 }
 .cmp-card:hover { background: var(--surface-2); }
@@ -1127,8 +1140,9 @@ button { background: none; border: none; cursor: pointer; }
 .cmp-card--on::before {
   content: '';
   position: absolute;
-  left: 0; top: 0; bottom: 0;
+  left: -6px; top: 3px; bottom: 3px;
   width: 2px;
+  border-radius: 1px;
   background: var(--fg);
 }
 

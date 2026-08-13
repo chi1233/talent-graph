@@ -108,9 +108,9 @@ export default function Sidebar({
 
               <div className="row__body">
                 <div className="row__name">{node.name}</div>
-                <div className="row__sub">
-                  {[node.role, node.company].filter(Boolean).join(' · ') || node.geo || '—'}
-                </div>
+                {/* Role only — pairing it with the company truncated almost
+                    every row. The company is one click away in the inspector. */}
+                <div className="row__sub">{node.role || node.company || node.geo || '—'}</div>
               </div>
 
               <div className="row__meta">

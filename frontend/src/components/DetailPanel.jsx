@@ -63,6 +63,16 @@ export default function DetailPanel({ node, edges, allNodes }) {
   const isPerson = node.label === 'Person'
   const education = [node.degree, node.field].filter(Boolean).join(' in ')
 
+  // One labelled block instead of a heading per node type
+  const facts = [
+    ['Education',  education],
+    ['World rank', node.world_rank ? `#${node.world_rank}` : null],
+    ['Country',    node.country],
+    ['Stage',      node.stage],
+    ['Sector',     node.sector],
+    ['HQ',         node.hq_city],
+  ].filter(([, v]) => v)
+
   return (
     <div className="detail">
       <div className="panel-head">
@@ -124,7 +134,6 @@ export default function DetailPanel({ node, edges, allNodes }) {
               </div>
             </div>
 
-            <div className="section__title">Breakdown</div>
             <div className="bars">
               {SCORE_DIMS.map(d => (
                 <ScoreBar key={d.key} label={d.label} value={node[d.key]} weight={d.weight} />
@@ -135,45 +144,19 @@ export default function DetailPanel({ node, edges, allNodes }) {
 
         {node.bio && (
           <div className="section">
-            <div className="section__title">Profile</div>
             <p className="prose">{node.bio}</p>
           </div>
         )}
 
-        {education && (
+        {facts.length > 0 && (
           <div className="section">
-            <div className="section__title">Education</div>
-            <p className="prose">{education}</p>
-          </div>
-        )}
-
-        {node.label === 'Institution' && (node.world_rank || node.country) && (
-          <div className="section">
-            <div className="section__title">Institution</div>
             <div className="kv">
-              {node.world_rank && (
-                <div className="kv__row">
-                  <span className="kv__k">World rank</span>
-                  <span className="kv__v mono">#{node.world_rank}</span>
+              {facts.map(([k, v]) => (
+                <div className="kv__row" key={k}>
+                  <span className="kv__k">{k}</span>
+                  <span className="kv__v">{v}</span>
                 </div>
-              )}
-              {node.country && (
-                <div className="kv__row">
-                  <span className="kv__k">Country</span>
-                  <span className="kv__v">{node.country}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {node.label === 'Company' && (node.stage || node.sector || node.hq_city) && (
-          <div className="section">
-            <div className="section__title">Company</div>
-            <div className="kv">
-              {node.stage &&    <div className="kv__row"><span className="kv__k">Stage</span><span className="kv__v">{node.stage}</span></div>}
-              {node.sector &&   <div className="kv__row"><span className="kv__k">Sector</span><span className="kv__v">{node.sector}</span></div>}
-              {node.hq_city &&  <div className="kv__row"><span className="kv__k">HQ</span><span className="kv__v">{node.hq_city}</span></div>}
+              ))}
             </div>
           </div>
         )}
@@ -197,7 +180,6 @@ export default function DetailPanel({ node, edges, allNodes }) {
 
         {isPerson && (
           <div className="section">
-            <div className="section__title">Curation</div>
             <div className={`note note--${node.manually_reviewed ? 'ok' : 'pending'}`}>
               <span className="note__icon">
                 {node.manually_reviewed
