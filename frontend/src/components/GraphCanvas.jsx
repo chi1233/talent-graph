@@ -20,17 +20,24 @@ const LABEL_TEXT = {
 
 // Person radius scales with composite score; other types are fixed
 const BASE_RADIUS = {
-  Person:            6,
-  Institution:       10,
-  Company:           9,
-  GeographicCluster: 8,
-  Publication:       6,
+  Person:            8,
+  Institution:       13,
+  Company:           12,
+  GeographicCluster: 11,
+  Publication:       8,
 }
 
 function radiusOf(n) {
-  const base = BASE_RADIUS[n.label] ?? 7
+  const base = BASE_RADIUS[n.label] ?? 9
   if (n.label !== 'Person' || n.composite_score == null) return base
-  return base + (n.composite_score / 10) * 5
+  return base + (n.composite_score / 10) * 6
+}
+
+// Only the places get names on the canvas. People are identified by the
+// inspector, by hover, and by the roster — labelling all of them buried
+// the graph in text.
+function isLabelled(n) {
+  return n.label !== 'Person'
 }
 
 function colorOf(n) {
@@ -57,6 +64,9 @@ export default function GraphCanvas({ nodes, edges, selectedNode, onSelect }) {
   const selRef = useRef(null)
   const declutterRef = useRef(() => {})
   const pinnedRef = useRef(new Set())
+  // Zoom applied to fit the layout, and the radius compensation that undoes it
+  const fitScaleRef = useRef(1)
+  const compRef = useRef(1)
 
   // Keep the latest onSelect without restarting the simulation
   const onSelectRef = useRef(onSelect)
@@ -75,6 +85,9 @@ export default function GraphCanvas({ nodes, edges, selectedNode, onSelect }) {
     const W = container.clientWidth
     const H = container.clientHeight
 
+    fitScaleRef.current = 1
+    compRef.current = 1
+
     const svg = d3.select(svgRef.current)
     svg.selectAll('*').remove()
     svg.attr('width', W).attr('height', H)
@@ -85,10 +98,10 @@ export default function GraphCanvas({ nodes, edges, selectedNode, onSelect }) {
     const zoom = d3.zoom()
       .scaleExtent([0.25, 4])
       .on('zoom', e => {
-        markUsed.current()
+        if (e.sourceEvent) markUsed.current()
         g.attr('transform', e.transform)
         // Labels grow more slowly than the graph, so zooming in makes room for more of them
-        g.selectAll('text').attr('font-size', 10 / Math.sqrt(e.transform.k))
+        g.selectAll('text').attr('font-size', 10 / Math.sqrt(fitScaleRef.current * e.transform.k))
         clearTimeout(zoomTimer)
         zoomTimer = setTimeout(() => declutterRef.current(), 90)
       })
@@ -102,12 +115,16 @@ export default function GraphCanvas({ nodes, edges, selectedNode, onSelect }) {
       .filter(e => e.source && e.target)
 
     const sim = d3.forceSimulation(nodeData)
-      .force('link',    d3.forceLink(edgeData).id(d => d.id).distance(96).strength(0.35))
-      .force('charge',  d3.forceManyBody().strength(-260))
+      // Spacing scales with the node sizes above, so the graph keeps the same
+      // visual density rather than getting cramped
+      .force('link',    d3.forceLink(edgeData).id(d => d.id).distance(92).strength(0.42))
+      .force('charge',  d3.forceManyBody().strength(-250))
       .force('center',  d3.forceCenter(W / 2, H / 2))
-      .force('collide', d3.forceCollide().radius(d => radiusOf(d) + 9))
-      .force('x',       d3.forceX(W / 2).strength(0.03))
-      .force('y',       d3.forceY(H / 2).strength(0.03))
+      .force('collide', d3.forceCollide().radius(d => radiusOf(d) + 8))
+      .force('x',       d3.forceX(W / 2).strength(0.09))
+      .force('y',       d3.forceY(H / 2).strength(0.09))
+      // Settle in ~3s rather than ~5s, so the fit-to-view lands promptly
+      .alphaDecay(0.04)
 
     const link = g.append('g')
       .attr('stroke', 'var(--line-2)')
@@ -187,7 +204,7 @@ export default function GraphCanvas({ nodes, edges, selectedNode, onSelect }) {
         .attr('stroke-opacity', 0.9)
     }
 
-    const label = node.append('text')
+    const label = node.filter(isLabelled).append('text')
       .attr('dy', d => radiusOf(d) + 12)
       .attr('text-anchor', 'middle')
       .attr('font-size', 10)
@@ -212,24 +229,65 @@ export default function GraphCanvas({ nodes, edges, selectedNode, onSelect }) {
           return radiusOf(b.d) - radiusOf(a.d)
         })
 
-      // Seed with the node circles so labels never sit on top of a node
+      // Seed with the node circles so labels never sit on top of a node. Each
+      // obstacle carries its node id: a label sits directly beneath its own
+      // circle, so testing it against that circle would reject every label.
       const placed = nodeData
         .filter(d => d.x != null)
         .map(d => {
-          const r = radiusOf(d) + 1
-          return { x: d.x - r, y: d.y - r, r: d.x + r, b: d.y + r }
+          const r = radiusOf(d) * compRef.current + 1
+          return { id: d.id, x: d.x - r, y: d.y - r, r: d.x + r, b: d.y + r }
         })
 
       for (const { el, d } of items) {
         const bb = el.getBBox()
         const box = {
+          id: d.id,
           x: d.x + bb.x - 3, y: d.y + bb.y - 2,
           r: d.x + bb.x + bb.width + 3, b: d.y + bb.y + bb.height + 2,
         }
-        const clash = placed.some(p => !(box.r < p.x || p.r < box.x || box.b < p.y || p.b < box.y))
+        const clash = placed.some(p =>
+          p.id !== d.id &&
+          !(box.r < p.x || p.r < box.x || box.b < p.y || p.b < box.y))
         el.style.opacity = clash ? 0 : 1
         if (!clash) placed.push(box)
       }
+    }
+
+    let fitted = false
+    const fitToView = () => {
+      if (fitted || !nodeData.length) return
+      fitted = true
+
+      const xs = nodeData.map(d => d.x)
+      const ys = nodeData.map(d => d.y)
+      const pad = 46   // room for the labels that hang below each node
+      const minX = Math.min(...xs) - pad, maxX = Math.max(...xs) + pad
+      const minY = Math.min(...ys) - pad, maxY = Math.max(...ys) + pad
+
+      const box = svgRef.current?.getBoundingClientRect()
+      if (!box?.width) return
+
+      const scale = Math.min(1, box.width / (maxX - minX), box.height / (maxY - minY))
+      const t = d3.zoomIdentity
+        .translate(box.width / 2 - scale * (minX + maxX) / 2,
+                   box.height / 2 - scale * (minY + maxY) / 2)
+        .scale(scale)
+
+      // Zooming out to fit would shrink the nodes with everything else. Scale
+      // the drawn radii back up by the same factor so they keep their intended
+      // on-screen size. Clamped, because past ~1.5x the compensated circles
+      // start eating the gaps that forceCollide reserved for them.
+      fitScaleRef.current = scale
+      const comp = Math.min(1 / scale, 1.5)
+      compRef.current = comp
+
+      node.select('.dot').attr('r', d => radiusOf(d) * comp)
+      node.select('.ping').attr('r', d => radiusOf(d) * comp)
+      node.select('.halo').attr('r', d => radiusOf(d) * comp + 5)
+      label.attr('dy', d => (radiusOf(d) + 12) * comp)
+
+      svg.transition().duration(600).ease(d3.easeCubicOut).call(zoom.transform, t)
     }
 
     let ticks = 0
@@ -242,7 +300,7 @@ export default function GraphCanvas({ nodes, edges, selectedNode, onSelect }) {
       node.attr('transform', d => `translate(${d.x},${d.y})`)
       if (++ticks % 25 === 0) declutterRef.current()
     })
-    sim.on('end', () => declutterRef.current())
+    sim.on('end', () => { fitToView(); declutterRef.current() })
 
     selRef.current = { node, link }
 
