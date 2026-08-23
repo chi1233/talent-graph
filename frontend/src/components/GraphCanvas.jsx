@@ -33,13 +33,6 @@ function radiusOf(n) {
   return base + (n.composite_score / 10) * 6
 }
 
-// Only the places get names on the canvas. People are identified by the
-// inspector, by hover, and by the roster — labelling all of them buried
-// the graph in text.
-function isLabelled(n) {
-  return n.label !== 'Person'
-}
-
 function colorOf(n) {
   const v = LABEL_VAR[n.label]
   return v ? `var(${v})` : 'var(--fg-4)'
@@ -67,6 +60,7 @@ export default function GraphCanvas({ nodes, edges, selectedNode, onSelect }) {
   // Zoom applied to fit the layout, and the radius compensation that undoes it
   const fitScaleRef = useRef(1)
   const compRef = useRef(1)
+  const selectedIdRef = useRef(null)
 
   // Keep the latest onSelect without restarting the simulation
   const onSelectRef = useRef(onSelect)
@@ -204,7 +198,10 @@ export default function GraphCanvas({ nodes, edges, selectedNode, onSelect }) {
         .attr('stroke-opacity', 0.9)
     }
 
-    const label = node.filter(isLabelled).append('text')
+    // Every node gets a text element. Which ones are actually shown is decided
+    // in the declutter pass below — places by default, a person only while
+    // they are the selected node.
+    const label = node.append('text')
       .attr('dy', d => radiusOf(d) + 12)
       .attr('text-anchor', 'middle')
       .attr('font-size', 10)
@@ -219,15 +216,30 @@ export default function GraphCanvas({ nodes, edges, selectedNode, onSelect }) {
     // zoom level changes, never on every frame.
     declutterRef.current = () => {
       const pinned = pinnedRef.current
+      const selectedId = selectedIdRef.current
+
+      // Places are named on the canvas; a person is named only while they are
+      // the node you clicked. Labelling all 49 people at once buried the graph.
+      const eligible = d => d.label !== 'Person' || d.id === selectedId
+
       const items = label.nodes()
         .map(el => ({ el, d: d3.select(el).datum() }))
         .filter(it => it.d && it.d.x != null)
-        .sort((a, b) => {
-          const pa = pinned.has(a.d.id) ? 1 : 0
-          const pb = pinned.has(b.d.id) ? 1 : 0
-          if (pa !== pb) return pb - pa
-          return radiusOf(b.d) - radiusOf(a.d)
-        })
+
+      for (const { el, d } of items) {
+        if (!eligible(d)) el.style.opacity = 0
+      }
+
+      const candidates = items.filter(it => eligible(it.d)).sort((a, b) => {
+        // The clicked node is placed first and never dropped
+        const sa = a.d.id === selectedId ? 1 : 0
+        const sb = b.d.id === selectedId ? 1 : 0
+        if (sa !== sb) return sb - sa
+        const pa = pinned.has(a.d.id) ? 1 : 0
+        const pb = pinned.has(b.d.id) ? 1 : 0
+        if (pa !== pb) return pb - pa
+        return radiusOf(b.d) - radiusOf(a.d)
+      })
 
       // Seed with the node circles so labels never sit on top of a node. Each
       // obstacle carries its node id: a label sits directly beneath its own
@@ -239,14 +251,16 @@ export default function GraphCanvas({ nodes, edges, selectedNode, onSelect }) {
           return { id: d.id, x: d.x - r, y: d.y - r, r: d.x + r, b: d.y + r }
         })
 
-      for (const { el, d } of items) {
+      for (const { el, d } of candidates) {
         const bb = el.getBBox()
         const box = {
           id: d.id,
           x: d.x + bb.x - 3, y: d.y + bb.y - 2,
           r: d.x + bb.x + bb.width + 3, b: d.y + bb.y + bb.height + 2,
         }
-        const clash = placed.some(p =>
+        // You clicked this node to find out who it is, so its name always wins
+        const pinnedOpen = d.id === selectedId
+        const clash = !pinnedOpen && placed.some(p =>
           p.id !== d.id &&
           !(box.r < p.x || p.r < box.x || box.b < p.y || p.b < box.y))
         el.style.opacity = clash ? 0 : 1
@@ -352,10 +366,14 @@ export default function GraphCanvas({ nodes, edges, selectedNode, onSelect }) {
         !id ? opacityOf(d) : neighbours.has(d.id) ? Math.max(opacityOf(d), 0.9) : opacityOf(d) * 0.28)
 
     sel.node.select('text')
-      .attr('fill', d => (!id || neighbours.has(d.id) ? 'var(--fg-3)' : 'var(--fg-4)'))
+      .attr('fill', d => d.id === id ? 'var(--fg)'
+                       : (!id || neighbours.has(d.id)) ? 'var(--fg-3)'
+                       : 'var(--fg-4)')
+      .attr('font-weight', d => (d.id === id ? 600 : 500))
       .attr('fill-opacity', d => (!id || neighbours.has(d.id) ? 1 : 0.35))
 
     // The selection and everything it touches always keeps its label
+    selectedIdRef.current = id ?? null
     pinnedRef.current = neighbours
     declutterRef.current()
 
